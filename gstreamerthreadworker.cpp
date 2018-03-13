@@ -123,9 +123,11 @@ void GstreamerThreadWorker::mainLoop()
 
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
-        ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue max-size-buffers = 1 ! videoconvert ! appsink name=myvideosink caps=\"video/x-raw,format=RGB16,width=640,height=480\" d. ! queue max-size-buffers = 1 ! audioconvert ! appsink "
+        ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue max-size-buffers = 1 ! videoconvert ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink "
+         "caps=\"video/x-raw,format=RGB16,width=640,height=480\" sync=true d. ! queue max-size-buffers = 1 ! "
+         "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved ! appsink "
          "caps=\"audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved\" "
-         "name=myaudiosink");
+         "name=myaudiosink sync=true");
     std::cout << "Pipeline string: \n" << string << std::endl;
     data->source = gst_parse_launch(string, NULL);
     g_free(string);
@@ -154,7 +156,7 @@ void GstreamerThreadWorker::mainLoop()
 
     std::cout << "Video sink ready..." << std::endl;
 
-    string = g_strdup_printf("appsrc name=outputaudiosource caps=\"audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved\" ! autoaudiosink");
+    string = g_strdup_printf("appsrc name=outputaudiosource caps=\"audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved\" ! autoaudiosink sync=true");
     data->audiosink = gst_parse_launch(string, NULL);
     g_free(string);
 

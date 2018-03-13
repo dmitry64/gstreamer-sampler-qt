@@ -22,5 +22,8 @@ int main(int argc, char* argv[])
     QObject::connect(&worker, &GstreamerThreadWorker::frameReady, &w, &MainWindow::onFrame);
     w.show();
 
-    return a.exec();
+    int ret = a.exec();
+
+
+    return ret;
 }

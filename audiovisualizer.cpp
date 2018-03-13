@@ -3,7 +3,7 @@
 #include <iostream>
 #include <QPainter>
 
-const int samplesSize = 6;
+const int samplesSize = 4;
 
 AudioVisualizer::AudioVisualizer(QWidget* parent)
     : QWidget(parent)
@@ -19,6 +19,7 @@ void AudioVisualizer::onSample(std::vector<signed short>& samples)
         _data.push_back(samples);
     }
     else {
+        _data.push_back(samples);
         _data.pop_front();
     }
 }
@@ -36,8 +37,10 @@ void AudioVisualizer::paintEvent(QPaintEvent* event)
         float i = 0;
         QPointF begin(0, h / 2);
         QPointF end;
+        auto it = _data.begin();
         for (int j = 0; j < samplesSize; ++j) {
-            const auto& sample = _data.front();
+            const auto& sample = it.operator*();
+            ++it;
 
             for (signed short value : sample) {
                 float currentHeight = (static_cast<float>(value) / 32767.0f + 0.5f);
