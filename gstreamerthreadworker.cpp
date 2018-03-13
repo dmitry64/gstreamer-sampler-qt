@@ -123,8 +123,9 @@ void GstreamerThreadWorker::mainLoop()
 
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
-        ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue max-size-buffers = 1 ! videoconvert ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink "
-         "caps=\"video/x-raw,format=RGB16,width=640,height=480\" sync=true d. ! queue max-size-buffers = 1 ! "
+        // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink sync=true");
+        ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux name=d ! queue max-size-buffers = 100 ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink "
+         "caps=\"video/x-raw,format=RGB16,width=640,height=480\" sync=true d. ! queue max-size-buffers = 100 ! opusdec !"
          "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved ! appsink "
          "caps=\"audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved\" "
          "name=myaudiosink sync=true");
