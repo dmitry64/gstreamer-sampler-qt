@@ -43,12 +43,12 @@ void AudioVisualizer::paintEvent(QPaintEvent* event)
             ++it;
 
             for (signed short value : sample) {
-                float currentHeight = (static_cast<float>(value) / 32767.0f + 0.5f);
+                float currentHeight = (static_cast<float>(value) / 32767.0f);
                 if (std::abs(currentHeight) > _maxHeight) {
                     _maxHeight = std::abs(currentHeight);
                 }
                 currentHeight = currentHeight / _maxHeight;
-                end = QPointF((i / static_cast<float>(size)) * w, h - currentHeight * h);
+                end = QPointF((i / static_cast<float>(size)) * w, h - (currentHeight + 0.5f) * h);
                 painter.drawLine(begin, end);
                 begin = end;
                 i += 1.0f;
