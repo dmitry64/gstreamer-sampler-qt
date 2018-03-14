@@ -23,7 +23,7 @@ void VideoWidget::paintEvent(QPaintEvent* event)
     if (!frameList.empty()) {
         const auto& frame = frameList.front();
 
-        QImage image((const unsigned char*) frame.data(), 640, 420, QImage::Format_RGB888);
+        QImage image((const unsigned char*) frame.data(), 1920, 1080, QImage::Format_RGB888);
 
         /*QByteArray ba;
         QBuffer buffer(&ba);

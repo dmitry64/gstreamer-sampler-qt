@@ -1,5 +1,13 @@
 #include "gstreamerthreadworker.h"
 #include <unistd.h>
+#include <iomanip>
+
+static void seek_to_time(GstElement* pipeline, gint64 time_nanoseconds)
+{
+    if (!gst_element_seek(pipeline, 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET, time_nanoseconds, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
+        g_print("Seek failed!\n");
+    }
+}
 
 GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, GstreamerThreadWorker::ProgramData* data)
 {
@@ -32,19 +40,21 @@ GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, GstreamerThreadWork
 GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, GstreamerThreadWorker::ProgramData* data)
 {
     GstSample* sample;
-    GstBuffer *app_buffer, *buffer;
+    GstBuffer* buffer;
     GstMapInfo info;
 
     sample = gst_app_sink_pull_sample(GST_APP_SINK(elt));
     buffer = gst_sample_get_buffer(sample);
     gst_buffer_map(buffer, &info, GST_MAP_READ);
 
+
     std::vector<unsigned char> outputVector(info.size);
     memcpy(outputVector.data(), info.data, info.size);
     data->worker->sendVideoSample(outputVector);
 
-    // std::cout << "InfoSize:" << info.size << std::endl;
-    // app_buffer = gst_buffer_copy(buffer);
+    std::cout << "Frame size:" << info.size << " bytes, " << info.size / 1024 << " KB, " << info.size / 1024 / 1024 << " MB"
+              << " PTS:" << std::setprecision(3) << (buffer->pts / 1000.0f / 1000.0f / 1000.0f) << "s" << std::endl;
+
     gst_buffer_unmap(buffer, &info);
 
     gst_sample_unref(sample);
@@ -91,6 +101,21 @@ static gboolean on_audio_sink_message(GstBus* bus, GstMessage* message, Gstreame
     return TRUE;
 }
 
+static gboolean gst_my_filter_sink_event(GstPad* pad, GstObject* parent, GstEvent* event)
+{
+    gboolean ret;
+    std::cout << "EVENT:" << GST_EVENT_TYPE_NAME(event) << std::endl;
+
+    switch (GST_EVENT_TYPE(event)) {
+    default:
+        /* just call the default handler */
+        ret = gst_pad_event_default(pad, parent, event);
+        break;
+    }
+    return ret;
+}
+
+
 GstreamerThreadWorker::GstreamerThreadWorker(QObject* parent)
     : QObject(parent)
 {
@@ -126,8 +151,8 @@ void GstreamerThreadWorker::mainLoop()
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
         // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink sync=true");
-        ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux name=d ! queue ! h264parse ! vaapih264dec ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=640,height=420,framerate=30/1 ! appsink name=myvideosink "
-         "caps=\"video/x-raw,format=RGB,width=640,height=420,framerate=30/1\" sync=true d. ! queue ! opusdec !"
+        ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux name=d ! queue ! h264parse ! vaapih264dec ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=1920,height=1080,framerate=60/1 ! appsink name=myvideosink "
+         "caps=\"video/x-raw,format=RGB,width=1920,height=1080,framerate=60/1\" sync=true d. ! queue ! opusdec !"
          "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved ! appsink "
          "caps=\"audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved\" "
          "name=myaudiosink sync=true");
@@ -158,6 +183,9 @@ void GstreamerThreadWorker::mainLoop()
     gst_object_unref(myvideosink);
 
     std::cout << "Video sink ready..." << std::endl;
+
+    GstPad* appsinkPad = gst_element_get_static_pad(GST_ELEMENT(myvideosink), "sink");
+    gst_pad_set_event_function(appsinkPad, gst_my_filter_sink_event);
 
     string = g_strdup_printf("appsrc name=outputaudiosource caps=\"audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved\" ! autoaudiosink sync=true");
     data->audiosink = gst_parse_launch(string, NULL);
