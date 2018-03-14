@@ -33,7 +33,6 @@ GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, GstreamerThreadWork
 {
     GstSample* sample;
     GstBuffer *app_buffer, *buffer;
-    GstElement* source;
     GstMapInfo info;
 
     sample = gst_app_sink_pull_sample(GST_APP_SINK(elt));
@@ -43,10 +42,13 @@ GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, GstreamerThreadWork
     std::vector<unsigned char> outputVector(info.size);
     memcpy(outputVector.data(), info.data, info.size);
     data->worker->sendVideoSample(outputVector);
+
     // std::cout << "InfoSize:" << info.size << std::endl;
-    app_buffer = gst_buffer_copy(buffer);
+    // app_buffer = gst_buffer_copy(buffer);
+    gst_buffer_unmap(buffer, &info);
 
     gst_sample_unref(sample);
+
 
     return GST_FLOW_OK;
 }
@@ -124,8 +126,8 @@ void GstreamerThreadWorker::mainLoop()
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
         // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink sync=true");
-        ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux name=d ! queue ! h264parse ! vaapih264dec ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=1280,height=720,framerate=30/1 ! appsink name=myvideosink "
-         "caps=\"video/x-raw,format=RGB,width=1280,height=720,framerate=30/1\" sync=true d. ! queue ! opusdec !"
+        ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux name=d ! queue ! h264parse ! vaapih264dec ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=640,height=420,framerate=30/1 ! appsink name=myvideosink "
+         "caps=\"video/x-raw,format=RGB,width=640,height=420,framerate=30/1\" sync=true d. ! queue ! opusdec !"
          "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved ! appsink "
          "caps=\"audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved\" "
          "name=myaudiosink sync=true");
@@ -188,4 +190,7 @@ void GstreamerThreadWorker::mainLoop()
     gst_object_unref(data->audiosink);
     g_main_loop_unref(data->loop);
     g_free(data);
+
+    std::cout << "GStreamer thread finished..." << std::endl;
+    emit finished();
 }

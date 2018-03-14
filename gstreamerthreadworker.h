@@ -34,6 +34,7 @@ public:
 signals:
     void sampleReady(std::vector<signed short> samples);
     void frameReady(std::vector<unsigned char> frame);
+    void finished();
 
 public slots:
     void mainLoop();

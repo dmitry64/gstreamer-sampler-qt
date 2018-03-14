@@ -12,6 +12,8 @@ int main(int argc, char* argv[])
 
     GstreamerThreadWorker worker;
     QThread gstreamerThread;
+    QObject::connect(&gstreamerThread, &QThread::finished, &gstreamerThread, &QThread::deleteLater);
+    QObject::connect(&worker, &GstreamerThreadWorker::finished, &gstreamerThread, &QThread::deleteLater);
     worker.moveToThread(&gstreamerThread);
     gstreamerThread.start();
 

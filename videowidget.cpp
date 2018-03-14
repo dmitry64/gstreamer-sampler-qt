@@ -1,5 +1,6 @@
 #include "videowidget.h"
 
+#include <QBuffer>
 #include <QPainter>
 #include <iostream>
 
@@ -22,7 +23,13 @@ void VideoWidget::paintEvent(QPaintEvent* event)
     if (!frameList.empty()) {
         const auto& frame = frameList.front();
 
-        QImage image((const unsigned char*) frame.data(), 1280, 720, QImage::Format_RGB888);
+        QImage image((const unsigned char*) frame.data(), 640, 420, QImage::Format_RGB888);
+
+        /*QByteArray ba;
+        QBuffer buffer(&ba);
+        buffer.open(QIODevice::WriteOnly);
+        image.save(&buffer, "PNG");
+        std::cout << "buffer size:" << buffer.size() << std::endl;*/
         painter.drawImage(QRect(0, 0, width(), height()), image);
         if (frameList.size() > 1) {
             frameList.pop_front();
