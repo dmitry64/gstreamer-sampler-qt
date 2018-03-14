@@ -43,7 +43,7 @@ GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, GstreamerThreadWork
     std::vector<unsigned char> outputVector(info.size);
     memcpy(outputVector.data(), info.data, info.size);
     data->worker->sendVideoSample(outputVector);
-
+    // std::cout << "InfoSize:" << info.size << std::endl;
     app_buffer = gst_buffer_copy(buffer);
 
     gst_sample_unref(sample);
@@ -124,8 +124,8 @@ void GstreamerThreadWorker::mainLoop()
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
         // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink sync=true");
-        ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux name=d ! queue max-size-buffers = 100 ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink "
-         "caps=\"video/x-raw,format=RGB16,width=640,height=480\" sync=true d. ! queue max-size-buffers = 100 ! opusdec !"
+        ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux name=d ! queue ! h264parse ! vaapih264dec ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=1280,height=720,framerate=30/1 ! appsink name=myvideosink "
+         "caps=\"video/x-raw,format=RGB,width=1280,height=720,framerate=30/1\" sync=true d. ! queue ! opusdec !"
          "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved ! appsink "
          "caps=\"audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved\" "
          "name=myaudiosink sync=true");
