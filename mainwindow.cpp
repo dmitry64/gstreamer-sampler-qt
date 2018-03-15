@@ -27,3 +27,9 @@ void MainWindow::onFrame(std::vector<unsigned char> frame)
 {
     ui->videoWidget->drawFrame(frame);
 }
+
+void MainWindow::on_seekButton_released()
+{
+    int pos = ui->seekPosSpinBox->value();
+    emit seekPipeline(pos);
+}

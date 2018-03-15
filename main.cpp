@@ -11,21 +11,23 @@ int main(int argc, char* argv[])
     qRegisterMetaType<std::vector<unsigned char>>("std::vector<unsigned char>");
 
     GstreamerThreadWorker worker;
-    QThread gstreamerThread;
-    QObject::connect(&gstreamerThread, &QThread::finished, &gstreamerThread, &QThread::deleteLater);
-    QObject::connect(&worker, &GstreamerThreadWorker::finished, &gstreamerThread, &QThread::deleteLater);
-    worker.moveToThread(&gstreamerThread);
-    gstreamerThread.start();
+    // QThread gstreamerThread;
+    // QObject::connect(&worker, &GstreamerThreadWorker::finished, &gstreamerThread, &QThread::quit);
+    // worker.moveToThread(&gstreamerThread);
+    // gstreamerThread.start();
+
+    worker.start();
+
 
     MainWindow w;
 
-    QObject::connect(&w, &MainWindow::startPipeline, &worker, &GstreamerThreadWorker::mainLoop);
+    // QObject::connect(&w, &MainWindow::startPipeline, &worker, &GstreamerThreadWorker::start);
+    QObject::connect(&w, &MainWindow::seekPipeline, &worker, &GstreamerThreadWorker::seekPipeline);
     QObject::connect(&worker, &GstreamerThreadWorker::sampleReady, &w, &MainWindow::onSample);
     QObject::connect(&worker, &GstreamerThreadWorker::frameReady, &w, &MainWindow::onFrame);
     w.show();
 
     int ret = a.exec();
-
 
     return ret;
 }

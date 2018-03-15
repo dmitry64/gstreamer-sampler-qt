@@ -18,11 +18,15 @@ public:
 
 private slots:
     void on_startPipelineButton_released();
+
+    void on_seekButton_released();
+
 public slots:
     void onSample(std::vector<signed short> samples);
     void onFrame(std::vector<unsigned char> frame);
 signals:
     void startPipeline();
+    void seekPipeline(int pos);
 
 private:
     Ui::MainWindow* ui;

@@ -12,19 +12,33 @@
 #include <gst/app/gstappsink.h>
 #include <iostream>
 #include <vector>
+#include <queue>
+#include <QThread>
 
+#include "commands.h"
 
-class GstreamerThreadWorker : public QObject
+class GstreamerThreadWorker;
+
+class ProgramData
+{
+public:
+    GMainLoop* loop;
+    GstElement* source;
+    GstElement* audiosink;
+    GstreamerThreadWorker* worker;
+};
+
+class GstreamerThreadWorker : public QThread
 {
     Q_OBJECT
+private:
+    std::mutex _mutex;
+    std::queue<Command*> _commands;
+    void run();
+    void mainLoop();
+
 public:
-    typedef struct
-    {
-        GMainLoop* loop;
-        GstElement* source;
-        GstElement* audiosink;
-        GstreamerThreadWorker* worker;
-    } ProgramData;
+    void handleCommands(ProgramData* data);
 
 public:
     explicit GstreamerThreadWorker(QObject* parent = nullptr);
@@ -37,7 +51,8 @@ signals:
     void finished();
 
 public slots:
-    void mainLoop();
+
+    void seekPipeline(int pos);
 };
 
 #endif  // GSTREAMERTHREADWORKER_H

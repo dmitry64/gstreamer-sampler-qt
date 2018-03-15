@@ -1,6 +1,7 @@
 #include "gstreamerthreadworker.h"
 #include <unistd.h>
 #include <iomanip>
+#include <QApplication>
 
 static void seek_to_time(GstElement* pipeline, gint64 time_nanoseconds)
 {
@@ -9,7 +10,27 @@ static void seek_to_time(GstElement* pipeline, gint64 time_nanoseconds)
     }
 }
 
-GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, GstreamerThreadWorker::ProgramData* data)
+gboolean timeout_callback(gpointer dataptr)
+{
+    static int counter = 0;
+    ProgramData* data = (ProgramData*) dataptr;
+
+
+    /*
+        counter++;
+        g_print("timeout_callback called %d times\n", counter);
+        if (20 == counter) {
+            seek_to_time(data->source, 0);
+            // g_main_loop_quit(data->loop);
+            return FALSE;
+        }
+    */
+    data->worker->handleCommands(data);
+
+    return TRUE;
+}
+
+GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, ProgramData* data)
 {
     GstSample* sample;
     GstBuffer *app_buffer, *buffer;
@@ -37,7 +58,7 @@ GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, GstreamerThreadWork
     return ret;
 }
 
-GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, GstreamerThreadWorker::ProgramData* data)
+GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, ProgramData* data)
 {
     GstSample* sample;
     GstBuffer* buffer;
@@ -52,8 +73,13 @@ GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, GstreamerThreadWork
     memcpy(outputVector.data(), info.data, info.size);
     data->worker->sendVideoSample(outputVector);
 
+    float second = (buffer->pts / 1000.0f / 1000.0f / 1000.0f);
     std::cout << "Frame size:" << info.size << " bytes, " << info.size / 1024 << " KB, " << info.size / 1024 / 1024 << " MB"
-              << " PTS:" << std::setprecision(3) << (buffer->pts / 1000.0f / 1000.0f / 1000.0f) << "s" << std::endl;
+              << " PTS:" << std::setprecision(3) << second << "s" << std::endl;
+
+    /*if (second > 1.0f) {
+        g_main_loop_quit(data->loop);
+    }*/
 
     gst_buffer_unmap(buffer, &info);
 
@@ -63,7 +89,7 @@ GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, GstreamerThreadWork
     return GST_FLOW_OK;
 }
 
-static gboolean on_source_message(GstBus* bus, GstMessage* message, GstreamerThreadWorker::ProgramData* data)
+static gboolean on_source_message(GstBus* bus, GstMessage* message, ProgramData* data)
 {
     GstElement* source;
 
@@ -84,7 +110,7 @@ static gboolean on_source_message(GstBus* bus, GstMessage* message, GstreamerThr
     return TRUE;
 }
 
-static gboolean on_audio_sink_message(GstBus* bus, GstMessage* message, GstreamerThreadWorker::ProgramData* data)
+static gboolean on_audio_sink_message(GstBus* bus, GstMessage* message, ProgramData* data)
 {
     switch (GST_MESSAGE_TYPE(message)) {
     case GST_MESSAGE_EOS:
@@ -116,8 +142,27 @@ static gboolean gst_my_filter_sink_event(GstPad* pad, GstObject* parent, GstEven
 }
 
 
+void GstreamerThreadWorker::run()
+{
+    mainLoop();
+}
+
+void GstreamerThreadWorker::handleCommands(ProgramData* data)
+{
+    _mutex.lock();
+    for (int i = 0; i < 50 && !_commands.empty(); ++i) {
+        Command* command = _commands.front();
+
+        command->handleCommand(data);
+
+        delete command;
+        _commands.pop();
+    }
+    _mutex.unlock();
+}
+
 GstreamerThreadWorker::GstreamerThreadWorker(QObject* parent)
-    : QObject(parent)
+    : QThread(parent)
 {
 }
 
@@ -147,6 +192,7 @@ void GstreamerThreadWorker::mainLoop()
     data->worker = this;
 
     data->loop = g_main_loop_new(NULL, FALSE);
+    g_timeout_add(100, timeout_callback, data);
 
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
@@ -221,4 +267,13 @@ void GstreamerThreadWorker::mainLoop()
 
     std::cout << "GStreamer thread finished..." << std::endl;
     emit finished();
+}
+
+void GstreamerThreadWorker::seekPipeline(int pos)
+{
+    std::cout << "Seek command to:" << pos << std::endl;
+    SeekCommand* command = new SeekCommand(pos);
+    _mutex.lock();
+    _commands.push(command);
+    _mutex.unlock();
 }
