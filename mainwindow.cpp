@@ -28,6 +28,11 @@ void MainWindow::onFrame(std::vector<unsigned char> frame)
     ui->videoWidget->drawFrame(frame);
 }
 
+void MainWindow::onSampleCut(std::vector<signed short> samples)
+{
+    ui->sampleViewer->drawSample(samples);
+}
+
 void MainWindow::on_seekButton_released()
 {
     int pos = ui->seekPosSpinBox->value();

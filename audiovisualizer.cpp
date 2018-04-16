@@ -21,7 +21,7 @@ AudioVisualizer::~AudioVisualizer() {}
 
 void AudioVisualizer::onSample(std::vector<signed short>& samples)
 {
-    qDebug() << samples.size();
+    // qDebug() << samples.size();
     if (_counter < 100) {
         _outputFile.write(reinterpret_cast<char*>(samples.data()), samples.size() * 2);
         _counter++;

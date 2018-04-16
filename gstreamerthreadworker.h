@@ -17,6 +17,7 @@
 #include <QThread>
 
 #include "commands.h"
+#include "waveanalyzer.hpp"
 
 class GstreamerThreadWorker;
 
@@ -35,11 +36,14 @@ class GstreamerThreadWorker : public QThread
 private:
     std::mutex _mutex;
     std::queue<Command*> _commands;
+    WaveAnalyzer _analyzer;
     void run();
     void mainLoop();
 
 public:
     void handleCommands(ProgramData* data);
+    void addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time);
+    void sendSignalBuffers();
 
 public:
     explicit GstreamerThreadWorker(QObject* parent = nullptr);
@@ -49,6 +53,7 @@ public:
 signals:
     void sampleReady(std::vector<signed short> samples);
     void frameReady(std::vector<unsigned char> frame);
+    void sampleCutReady(std::vector<signed short> samples);
     void finished();
 
 public slots:

@@ -25,6 +25,7 @@ int main(int argc, char* argv[])
     QObject::connect(&w, &MainWindow::seekPipeline, &worker, &GstreamerThreadWorker::seekPipeline);
     QObject::connect(&worker, &GstreamerThreadWorker::sampleReady, &w, &MainWindow::onSample);
     QObject::connect(&worker, &GstreamerThreadWorker::frameReady, &w, &MainWindow::onFrame);
+    QObject::connect(&worker, &GstreamerThreadWorker::sampleCutReady, &w, &MainWindow::onSampleCut);
     w.show();
 
     int ret = a.exec();

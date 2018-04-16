@@ -19,7 +19,7 @@ pkg_check_modules(GST REQUIRED gstreamer-1.0>=1.4
 
 
 
-add_executable(${PROJECT_NAME} "main.cpp" "mainwindow.cpp" "mainwindow.h" "mainwindow.ui" "gstreamerthreadworker.h" "gstreamerthreadworker.cpp" "audiovisualizer.h" "audiovisualizer.cpp" "videowidget.cpp" "videowidget.h" "commands.h" "commands.cpp")
+add_executable(${PROJECT_NAME} "main.cpp" "mainwindow.cpp" "mainwindow.h" "mainwindow.ui" "gstreamerthreadworker.h" "gstreamerthreadworker.cpp" "audiovisualizer.h" "audiovisualizer.cpp" "videowidget.cpp" "videowidget.h" "commands.h" "commands.cpp" "waveanalyzer.hpp" "waveanalyzer.cxx" "audiosampleviewer.cxx" "audiosampleviewer.hpp")
 target_include_directories(${PROJECT_NAME} PUBLIC ${GST_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Widgets ${GST_LIBRARIES})
  

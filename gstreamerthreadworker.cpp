@@ -45,6 +45,11 @@ GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, ProgramData* data)
 
     std::vector<signed short> outputVector(info.size / 2);
     memcpy(outputVector.data(), info.data, info.size);
+
+    data->worker->addSampleAndTimestamp(outputVector, buffer->pts);
+    data->worker->sendSignalBuffers();
+
+
     data->worker->sendAudioSample(outputVector);
     // std::cout << "Duration:" << buffer->duration / 1000.0f / 1000.0f << "ms" << std::endl;
 
@@ -75,8 +80,8 @@ GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, ProgramData* data)
     data->worker->sendVideoSample(outputVector);
 
     float second = (buffer->pts / 1000.0f / 1000.0f / 1000.0f);
-    std::cout << "Frame size:" << info.size << " bytes, " << info.size / 1024 << " KB, " << info.size / 1024 / 1024 << " MB"
-              << " PTS:" << std::setprecision(3) << second << "s" << std::endl;
+    /* std::cout << "Frame size:" << info.size << " bytes, " << info.size / 1024 << " KB, " << info.size / 1024 / 1024 << " MB"
+               << " PTS:" << std::setprecision(3) << second << "s" << std::endl;*/
 
     /*if (second > 1.0f) {
         g_main_loop_quit(data->loop);
@@ -160,6 +165,19 @@ void GstreamerThreadWorker::handleCommands(ProgramData* data)
         _commands.pop();
     }
     _mutex.unlock();
+}
+
+void GstreamerThreadWorker::addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time)
+{
+    _analyzer.addBufferWithTimecode(samples, time);
+}
+
+void GstreamerThreadWorker::sendSignalBuffers()
+{
+    std::vector<signed short> samples;
+    while (_analyzer.getNextBuffer(samples)) {
+        emit sampleCutReady(samples);
+    }
 }
 
 GstreamerThreadWorker::GstreamerThreadWorker(QObject* parent)

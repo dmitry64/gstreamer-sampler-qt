@@ -26,6 +26,7 @@ private slots:
 public slots:
     void onSample(std::vector<signed short> samples);
     void onFrame(std::vector<unsigned char> frame);
+    void onSampleCut(std::vector<signed short> samples);
 
 signals:
     void startPipeline();

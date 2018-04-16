@@ -84,7 +84,17 @@
        <widget class="VideoWidget" name="videoWidget" native="true"/>
       </item>
       <item>
-       <widget class="AudioVisualizer" name="audioWidget" native="true"/>
+       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="3,1">
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="AudioVisualizer" name="audioWidget" native="true"/>
+        </item>
+        <item>
+         <widget class="AudioSampleViewer" name="sampleViewer" native="true"/>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
@@ -104,6 +114,12 @@
    <class>VideoWidget</class>
    <extends>QWidget</extends>
    <header>videowidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AudioSampleViewer</class>
+   <extends>QWidget</extends>
+   <header>audiosampleviewer.hpp</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
