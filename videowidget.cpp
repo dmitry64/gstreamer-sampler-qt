@@ -31,7 +31,7 @@ void VideoWidget::paintEvent(QPaintEvent* event)
         image.save(&buffer, "PNG");
         std::cout << "buffer size:" << buffer.size() << std::endl;*/
         painter.drawImage(QRect(0, 0, width(), height()), image);
-        if (frameList.size() > 1) {
+        while (frameList.size() != 1) {
             frameList.pop_front();
         }
     }
