@@ -13,6 +13,7 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <mutex>
 #include <QThread>
 
 #include "commands.h"
