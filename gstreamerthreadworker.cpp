@@ -46,6 +46,7 @@ GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, ProgramData* data)
     std::vector<signed short> outputVector(info.size / 2);
     memcpy(outputVector.data(), info.data, info.size);
     data->worker->sendAudioSample(outputVector);
+    // std::cout << "Duration:" << buffer->duration / 1000.0f / 1000.0f << "ms" << std::endl;
 
     app_buffer = gst_buffer_copy(buffer);
 
@@ -197,10 +198,12 @@ void GstreamerThreadWorker::mainLoop()
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
         // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink sync=true");
-        ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux name=d ! queue ! h264parse ! vaapih264dec ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=1920,height=1080,framerate=60/1 ! appsink name=myvideosink "
-         "caps=\"video/x-raw,format=RGB,width=1920,height=1080,framerate=60/1\" sync=true d. ! queue ! opusdec !"
-         "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved ! appsink "
-         "caps=\"audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved\" "
+        ("rtspsrc location=rtsp://192.168.1.100/H.264/media.smp sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! decodebin ! videoconvert ! videoscale ! "
+         "video/x-raw,format=RGB,width=1920,height=1080 ! appsink "
+         "name=myvideosink "
+         "caps=\"video/x-raw,format=RGB,width=1920,height=1080\" sync=true demux. ! queue ! capsfilter caps=\"application/x-rtp,media=audio\" ! decodebin !"
+         "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved ! appsink "
+         "caps=\"audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved\" "
          "name=myaudiosink sync=true");
     std::cout << "Pipeline string: \n" << string << std::endl;
     data->source = gst_parse_launch(string, NULL);
