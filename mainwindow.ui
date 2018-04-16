@@ -48,6 +48,22 @@
        </widget>
       </item>
       <item>
+       <widget class="QGroupBox" name="groupBox">
+        <property name="title">
+         <string>Playback</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <widget class="QPushButton" name="pushButton">
+           <property name="text">
+            <string>Audio Play/Pause</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
        <spacer name="verticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>

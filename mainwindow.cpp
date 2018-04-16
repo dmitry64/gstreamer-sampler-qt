@@ -33,3 +33,8 @@ void MainWindow::on_seekButton_released()
     int pos = ui->seekPosSpinBox->value();
     emit seekPipeline(pos);
 }
+
+void MainWindow::on_pushButton_released()
+{
+    ui->audioWidget->pause();
+}

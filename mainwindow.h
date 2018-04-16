@@ -21,9 +21,12 @@ private slots:
 
     void on_seekButton_released();
 
+    void on_pushButton_released();
+
 public slots:
     void onSample(std::vector<signed short> samples);
     void onFrame(std::vector<unsigned char> frame);
+
 signals:
     void startPipeline();
     void seekPipeline(int pos);
