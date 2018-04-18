@@ -47,8 +47,6 @@ void WaveAnalyzer::analyze()
             SignalsBuffer::iterator beginIt = _buffers.end();
             SignalsBuffer::iterator endIt = _buffers.end();
 
-            // std::cout << "Searching signal = " << std::distance(baseLine, _buffers.end()) << std::endl;
-
             for (SignalsBuffer::iterator it = baseLine; (it + width2) <= _buffers.end(); ++it) {
                 SignalsBuffer::iterator leftBegin = it - width2;
                 SignalsBuffer::iterator leftEnd = it;
@@ -59,39 +57,26 @@ void WaveAnalyzer::analyze()
                 int diff = leftAvg - rightAvg;
 
                 if (diff > FRONT_THRESHOLD) {
-                    it += 2; /*
-                     std::cout << "DIFF:" << diff << std::endl;
-
-                     for (int i = -3; i < 16; ++i) {
-                         std::cout << " [" << i << "]=" << (it + i).operator*();
-                     }
-
-                     std::cout << std::endl;*/
-
-
+                    it += 2;
                     beginIt = it;
-                    // std::cout << "dist:" << std::distance(beginIt, _buffers.end()) << std::endl;
                     if (std::distance(beginIt, _buffers.end()) > SAMPLE_SIZE) {
                         endIt = beginIt + SAMPLE_SIZE;
                         found = true;
                         break;
                     }
                     else {
-                        // std::cout << "SPLIT!" << std::endl;
                         return;
                     }
                 }
             }
 
             if (found) {
-                // std::cout << "buff size:" << _buffers.size() << std::endl;
                 SignalsBuffer buff;
                 buff.insert(buff.begin(), beginIt, endIt);
                 unsigned int res = 0;
                 if (decodeBuffer(buff, res)) {
                     std::cout << "COORD:" << res << " ";
                 }
-
 
                 std::vector<GstClockTime>::iterator timeItBegin = _timeBuffers.begin() + std::distance(_buffers.begin(), beginIt);
                 std::vector<GstClockTime>::iterator timeItEnd = _timeBuffers.begin() + std::distance(_buffers.begin(), endIt);
@@ -100,7 +85,6 @@ void WaveAnalyzer::analyze()
                 std::cout << "TIME:" << bufferTime << std::endl;
                 _outputBuffers.push(buff);
 
-                // std::cout << "FOUND begin:" << std::distance(_buffers.begin(), beginIt) << " end:" << std::distance(_buffers.begin(), endIt) << std::endl;
                 _buffers.erase(_buffers.begin(), endIt);
                 _timeBuffers.erase(_timeBuffers.begin(), timeItEnd);
                 found = false;
