@@ -6,9 +6,14 @@
 #include <queue>
 #include <array>
 
-const unsigned int SAMPLE_SIZE = 550;
-const int FRONT_THRESHOLD = 12000;
-const unsigned int SAMPLE_OFFSET = 100;
+const static unsigned int SAMPLE_SIZE = 550;
+const static int FRONT_THRESHOLD = 12000;
+const static unsigned int SAMPLE_OFFSET = 100;
+const static int BASELINE_WINDOW_WIDTH = 8 * 2 - 3;
+const static int NEG_FRONT_WINDOW_WIDTH = 4;
+const static double AvTOL = 12;
+const static int AFTOL = 32767 / 2;
+const static int DFTOL = 4;
 
 class WaveAnalyzer
 {

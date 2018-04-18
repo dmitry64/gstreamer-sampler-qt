@@ -7,22 +7,18 @@
 
 void WaveAnalyzer::analyze()
 {
-    int width = 8 * 2 - 3;
-    int width2 = 4;
-    double AvTOL = 12;
-
     while (true) {
-        if (_buffers.size() > width * 4) {
+        if (_buffers.size() > BASELINE_WINDOW_WIDTH * 4) {
             SignalsBuffer::iterator baseLine = _buffers.end();
             bool found = false;
 
-            for (SignalsBuffer::iterator it = (_buffers.begin() + width); (it + width) <= _buffers.end(); ++it) {
-                SignalsBuffer::iterator leftBegin = it - width;
+            for (SignalsBuffer::iterator it = (_buffers.begin() + BASELINE_WINDOW_WIDTH); (it + BASELINE_WINDOW_WIDTH) <= _buffers.end(); ++it) {
+                SignalsBuffer::iterator leftBegin = it - BASELINE_WINDOW_WIDTH;
                 SignalsBuffer::iterator leftEnd = it;
                 SignalsBuffer::iterator rightBegin = it;
-                SignalsBuffer::iterator rightEnd = it + width;
-                double leftAvg = std::accumulate(leftBegin, leftEnd, 0.0) / static_cast<double>(width);
-                double rightAvg = std::accumulate(rightBegin, rightEnd, 0.0) / static_cast<double>(width);
+                SignalsBuffer::iterator rightEnd = it + BASELINE_WINDOW_WIDTH;
+                double leftAvg = std::accumulate(leftBegin, leftEnd, 0.0) / static_cast<double>(BASELINE_WINDOW_WIDTH);
+                double rightAvg = std::accumulate(rightBegin, rightEnd, 0.0) / static_cast<double>(BASELINE_WINDOW_WIDTH);
 
 
                 if (std::abs(leftAvg - rightAvg) < AvTOL) {
@@ -47,13 +43,13 @@ void WaveAnalyzer::analyze()
             SignalsBuffer::iterator beginIt = _buffers.end();
             SignalsBuffer::iterator endIt = _buffers.end();
 
-            for (SignalsBuffer::iterator it = baseLine; (it + width2) <= _buffers.end(); ++it) {
-                SignalsBuffer::iterator leftBegin = it - width2;
+            for (SignalsBuffer::iterator it = baseLine; (it + NEG_FRONT_WINDOW_WIDTH) <= _buffers.end(); ++it) {
+                SignalsBuffer::iterator leftBegin = it - NEG_FRONT_WINDOW_WIDTH;
                 SignalsBuffer::iterator leftEnd = it;
                 SignalsBuffer::iterator rightBegin = it;
-                SignalsBuffer::iterator rightEnd = it + width2;
-                int leftAvg = std::accumulate(leftBegin, leftEnd, 0) / static_cast<int>(width2);
-                int rightAvg = std::accumulate(rightBegin, rightEnd, 0) / static_cast<int>(width2);
+                SignalsBuffer::iterator rightEnd = it + NEG_FRONT_WINDOW_WIDTH;
+                int leftAvg = std::accumulate(leftBegin, leftEnd, 0) / static_cast<int>(NEG_FRONT_WINDOW_WIDTH);
+                int rightAvg = std::accumulate(rightBegin, rightEnd, 0) / static_cast<int>(NEG_FRONT_WINDOW_WIDTH);
                 int diff = leftAvg - rightAvg;
 
                 if (diff > FRONT_THRESHOLD) {
@@ -115,9 +111,6 @@ bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsig
     int FrontsSize = 0;
     int CodeLENGTH = 65 * 8 + 4;
     int STOL = 2;
-    int ATOL = 4;
-    int DTOL = 256;
-    int WTOL = 256;
 
     std::array<TWaveFront, 66> Fronts;
     TWaveFront emptyFront;
@@ -250,8 +243,6 @@ bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsig
 
 bool WaveAnalyzer::checkFront(const WaveAnalyzer::TWaveFront& front)
 {
-    int AFTOL = 32767 / 2;
-    int DFTOL = 4;
     bool Result = false;
     if (std::abs(front.yr - front.yl) >= AFTOL) {
         if ((front.xr - front.xl) <= DFTOL) {
