@@ -159,6 +159,7 @@ void GstreamerThreadWorker::handleCommands(ProgramData* data)
 void GstreamerThreadWorker::addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration)
 {
     _analyzer.addBufferWithTimecode(samples, time, duration);
+    _analyzer.analyze();
 }
 
 void GstreamerThreadWorker::sendSignalBuffers()

@@ -5,6 +5,7 @@
 #include <vector>
 #include <queue>
 #include <array>
+#include <mutex>
 
 const static unsigned int SAMPLE_SIZE = 550;
 const static int FRONT_THRESHOLD = 12000;
@@ -35,22 +36,29 @@ class WaveAnalyzer
         int yr;
     };
 
+    struct SyncPoint
+    {
+        unsigned int coord;
+        GstClockTime time;
+    };
 
 private:
+    std::mutex _inputBuffersMutex;
     SignalsBuffer _buffers;
     std::vector<GstClockTime> _timeBuffers;
-
+    std::mutex _outputBuffersMutex;
     std::queue<SignalsBuffer> _outputBuffers;
-
+    std::mutex _syncPointsMutex;
+    std::queue<SyncPoint> _syncPoints;
 
 private:
-    void analyze();
     bool decodeBuffer(const SignalsBuffer& buffer, unsigned int& result);
     bool checkFront(const TWaveFront& front);
 
 public:
     WaveAnalyzer();
     void addBufferWithTimecode(const SignalsBuffer& samples, GstClockTime timestamp, GstClockTime duration);
+    void analyze();
     bool getNextBuffer(SignalsBuffer& output);
 };
 

@@ -70,15 +70,21 @@ void WaveAnalyzer::analyze()
                 SignalsBuffer buff;
                 buff.insert(buff.begin(), beginIt, endIt);
                 unsigned int res = 0;
-                if (decodeBuffer(buff, res)) {
-                    std::cout << "COORD:" << res << " ";
-                }
+
 
                 std::vector<GstClockTime>::iterator timeItBegin = _timeBuffers.begin() + std::distance(_buffers.begin(), beginIt);
                 std::vector<GstClockTime>::iterator timeItEnd = _timeBuffers.begin() + std::distance(_buffers.begin(), endIt);
 
                 GstClockTime bufferTime = timeItBegin.operator*();
+                if (decodeBuffer(buff, res)) {
+                    std::cout << "COORD:" << res << " ";
+                    SyncPoint syncPoint;
+                    syncPoint.coord = res;
+                    syncPoint.time = bufferTime;
+                    _syncPoints.push(syncPoint);
+                }
                 std::cout << "TIME:" << bufferTime << std::endl;
+
                 _outputBuffers.push(buff);
 
                 _buffers.erase(_buffers.begin(), endIt);
@@ -265,8 +271,6 @@ void WaveAnalyzer::addBufferWithTimecode(const SignalsBuffer& samples, GstClockT
     for (unsigned long i = 0; i < size; ++i) {
         _timeBuffers.push_back(timestamp + i * timePerSample);
     }
-
-    analyze();
 }
 
 bool WaveAnalyzer::getNextBuffer(WaveAnalyzer::SignalsBuffer& output)
