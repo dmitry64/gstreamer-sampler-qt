@@ -6,9 +6,9 @@
 #include <queue>
 #include <array>
 
-const unsigned int SAMPLE_SIZE = 65 * 8 + 4;
-const unsigned int FRONT_THRESHOLD = 18000;
-const unsigned int SAMPLE_OFFSET = 4;
+const unsigned int SAMPLE_SIZE = 550;
+const int FRONT_THRESHOLD = 12000;
+const unsigned int SAMPLE_OFFSET = 100;
 
 class WaveAnalyzer
 {
@@ -22,24 +22,30 @@ class WaveAnalyzer
         unsigned int bufferIndex;
     };
 
+    struct TWaveFront
+    {
+        int xl;
+        int xr;
+        int yl;
+        int yr;
+    };
+
 
 private:
-    std::array<SignalsBuffer, 2> _buffers;
-    std::array<GstClockTime, 2> _timestamps;
+    SignalsBuffer _buffers;
+    std::vector<GstClockTime> _timeBuffers;
+
     std::queue<SignalsBuffer> _outputBuffers;
 
-    unsigned int _lastPos;
 
 private:
-    SampleType getSampleAt(unsigned int index);
-    unsigned int getSamplesAvailable();
-    unsigned int getBufferIndexBySampleIndex(unsigned int index);
-    SignalsBuffer cutSlice(const SignalSlice& slice);
-    bool findNextSignal(SignalSlice& slice);
+    void analyze();
+    bool decodeBuffer(const SignalsBuffer& buffer, unsigned int& result);
+    bool checkFront(const TWaveFront& front);
 
 public:
     WaveAnalyzer();
-    void addBufferWithTimecode(const SignalsBuffer& samples, GstClockTime timestamp);
+    void addBufferWithTimecode(const SignalsBuffer& samples, GstClockTime timestamp, GstClockTime duration);
     bool getNextBuffer(SignalsBuffer& output);
 };
 

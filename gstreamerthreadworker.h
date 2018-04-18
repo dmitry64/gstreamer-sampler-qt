@@ -42,7 +42,7 @@ private:
 
 public:
     void handleCommands(ProgramData* data);
-    void addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time);
+    void addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration);
     void sendSignalBuffers();
 
 public:

@@ -1,83 +1,296 @@
 #include "waveanalyzer.hpp"
 
 #include <iostream>
+#include <cassert>
+#include <algorithm>
+#include <numeric>
 
-WaveAnalyzer::SampleType WaveAnalyzer::getSampleAt(unsigned int index)
+void WaveAnalyzer::analyze()
 {
-    for (const auto& buffer : _buffers) {
-        if (index < buffer.size()) {
-            return buffer[index];
-        }
-        else {
-            index -= buffer.size();
-        }
-    }
-    return -32000;
-}
+    int width = 8 * 2 - 3;
+    int width2 = 4;
+    double AvTOL = 12;
 
-unsigned int WaveAnalyzer::getSamplesAvailable()
-{
-    unsigned int size = 0;
-    for (const auto& buffer : _buffers) {
-        size += buffer.size();
-    }
-    return size;
-}
+    while (true) {
+        if (_buffers.size() > width * 2) {
+            SignalsBuffer::iterator baseLine = _buffers.end();
+            bool found = false;
 
-unsigned int WaveAnalyzer::getBufferIndexBySampleIndex(unsigned int index)
-{
-    unsigned int bufferIndex = 0;
-    for (const auto& buffer : _buffers) {
-        if (index < buffer.size()) {
-            return bufferIndex;
-        }
-        else {
-            index -= buffer.size();
-        }
-        ++bufferIndex;
-    }
-    return bufferIndex;
-}
+            for (SignalsBuffer::iterator it = (_buffers.begin() + width); it != (_buffers.end() - width); ++it) {
+                SignalsBuffer::iterator leftBegin = it - width;
+                SignalsBuffer::iterator leftEnd = it;
+                SignalsBuffer::iterator rightBegin = it;
+                SignalsBuffer::iterator rightEnd = it + width;
+                double leftAvg = std::accumulate(leftBegin, leftEnd, 0.0) / static_cast<double>(width);
+                double rightAvg = std::accumulate(rightBegin, rightEnd, 0.0) / static_cast<double>(width);
 
-WaveAnalyzer::SignalsBuffer WaveAnalyzer::cutSlice(const WaveAnalyzer::SignalSlice& slice)
-{
-    unsigned int size = slice.end - slice.begin;
-    SignalsBuffer buff(size);
-    unsigned int buffIndex = 0;
-    for (unsigned int i = slice.begin; i < slice.end; ++i) {
-        buff[buffIndex] = getSampleAt(i);
-        ++buffIndex;
-    }
-    return buff;
-}
-
-WaveAnalyzer::WaveAnalyzer()
-    : _lastPos(0)
-{
-}
-
-void WaveAnalyzer::addBufferWithTimecode(const SignalsBuffer& samples, GstClockTime timestamp)
-{
-    if (_buffers[0].size() > 0) {
-        _lastPos -= _buffers[0].size();
-    }
-    _lastPos = 0;
-    std::swap(_buffers[0], _buffers[1]);
-    _buffers[1] = samples;
-    std::swap(_timestamps[0], _timestamps[1]);
-    _timestamps[1] = timestamp;
-
-    if (getSamplesAvailable() > 1100) {
-        SignalSlice slice;
-        while (findNextSignal(slice)) {
-            std::cout << "NEW SLICE!!! begin:" << slice.begin << " end:" << slice.end << " index:" << slice.bufferIndex << std::endl;
-            /*for (int i = slice.begin; i < slice.end; ++i) {
-                std::cout << getSampleAt(i) << " ";
+                if (std::abs(leftAvg - rightAvg) < AvTOL) {
+                    baseLine = it;
+                    baseLine++;
+                    // std::cout << "BASELINE" << std::endl;
+                    // std::cout << "WINDOW:" << leftAvg << " " << rightAvg << std::endl;
+                    break;
+                }
             }
-            std::cout << std::endl;*/
-            _outputBuffers.push(cutSlice(slice));
+
+            if (baseLine == _buffers.end()) {
+                std::cout << "Baseline not found!" << std::endl;
+                _buffers.clear();
+                _timeBuffers.clear();
+
+                return;
+            }
+            SignalsBuffer::iterator beginIt = _buffers.end();
+            SignalsBuffer::iterator endIt = _buffers.end();
+
+            // std::cout << "Searching signal = " << std::distance(baseLine, _buffers.end()) << std::endl;
+
+            for (SignalsBuffer::iterator it = baseLine; it != (_buffers.end() - width2); ++it) {
+                SignalsBuffer::iterator leftBegin = it - width2;
+                SignalsBuffer::iterator leftEnd = it;
+                SignalsBuffer::iterator rightBegin = it;
+                SignalsBuffer::iterator rightEnd = it + width2;
+                int leftAvg = std::accumulate(leftBegin, leftEnd, 0) / static_cast<int>(width2);
+                int rightAvg = std::accumulate(rightBegin, rightEnd, 0) / static_cast<int>(width2);
+                int diff = leftAvg - rightAvg;
+
+                if (diff > FRONT_THRESHOLD) {
+                    it += 2; /*
+                     std::cout << "DIFF:" << diff << std::endl;
+
+                     for (int i = -3; i < 16; ++i) {
+                         std::cout << " [" << i << "]=" << (it + i).operator*();
+                     }
+
+                     std::cout << std::endl;*/
+
+
+                    beginIt = it;
+                    // std::cout << "dist:" << std::distance(beginIt, _buffers.end()) << std::endl;
+                    if (std::distance(beginIt, _buffers.end()) > SAMPLE_SIZE) {
+                        endIt = beginIt + SAMPLE_SIZE;
+                        found = true;
+                        break;
+                    }
+                    else {
+                        // std::cout << "SPLIT!" << std::endl;
+                        return;
+                    }
+                }
+            }
+
+            if (found) {
+                // std::cout << "buff size:" << _buffers.size() << std::endl;
+                SignalsBuffer buff;
+                buff.insert(buff.begin(), beginIt, endIt);
+                unsigned int res = 0;
+                if (decodeBuffer(buff, res)) {
+                    std::cout << "DECODED:" << res << std::endl;
+                }
+                else {
+                    decodeBuffer(buff, res);
+                }
+
+
+                std::vector<GstClockTime>::iterator timeItBegin = _timeBuffers.begin() + std::distance(_buffers.begin(), beginIt);
+                std::vector<GstClockTime>::iterator timeItEnd = _timeBuffers.begin() + std::distance(_buffers.begin(), endIt);
+
+                GstClockTime bufferTime = timeItBegin.operator*();
+                // std::cout << "time:" << bufferTime << std::endl;
+                _outputBuffers.push(buff);
+
+                // std::cout << "FOUND begin:" << std::distance(_buffers.begin(), beginIt) << " end:" << std::distance(_buffers.begin(), endIt) << std::endl;
+                _buffers.erase(_buffers.begin(), endIt);
+                _timeBuffers.erase(_timeBuffers.begin(), timeItEnd);
+                found = false;
+            }
+            else {
+                return;
+            }
+        }
+        else {
+            return;
         }
     }
+}
+
+bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsigned int& result)
+{
+    unsigned int acode;
+    int startpoint = 0;
+    int wavesize = buffer.size();
+    const WaveAnalyzer::SignalsBuffer& wave = buffer;
+
+    int i = 0;
+    int k = 0;
+    int dy = 0;
+    int w = 0;
+    int State = 0;
+    int xref = 0;
+    int FrontsSize = 0;
+    int CodeLENGTH = 65 * 8 + 4;
+    int STOL = 2;
+    int ATOL = 4;
+    int DTOL = 256;
+    int WTOL = 256;
+
+    std::array<TWaveFront, 66> Fronts;
+    TWaveFront emptyFront;
+    emptyFront.xl = 0;
+    emptyFront.xr = 0;
+    emptyFront.yl = 0;
+    emptyFront.yr = 0;
+    std::fill(Fronts.begin(), Fronts.end(), emptyFront);
+
+    bool Result = false;
+
+    assert(!((startpoint + CodeLENGTH) > wavesize));
+    State = 1;
+    i = startpoint;
+    k = 0;
+
+    while (i < (startpoint + CodeLENGTH)) {
+        dy = wave[i + 1] - wave[i];
+        if (std::abs(dy) < STOL) {
+            w = 0;
+        }
+        else if (dy > 0) {
+            w = 1;
+        }
+        else {
+            w = 2;
+        }
+
+        switch (State) {
+        case 1: {
+            switch (w) {
+            case 1: {
+                Fronts[k].xl = i;  // k?
+                Fronts[k].yl = wave[i];
+                State = 2;
+                break;
+            }
+            case 2: {
+                Fronts[k].xl = i;
+                Fronts[k].yl = wave[i];
+                State = 3;
+                break;
+            }
+            }
+            break;
+        }
+        case 2: {
+            switch (w) {
+            case 0: {
+                Fronts[k].xr = i;
+                Fronts[k].yr = wave[i];
+                if (checkFront(Fronts[k])) {
+                    k++;
+                }
+                State = 1;
+                break;
+            }
+            case 2: {
+                Fronts[k].xr = i;
+                Fronts[k].yr = wave[i];
+                if (checkFront(Fronts[k])) {
+                    k++;
+                }
+                Fronts[k].xl = i;        //
+                Fronts[k].yl = wave[i];  //
+                State = 3;
+                break;
+            }
+            }
+            break;
+        }
+        case 3: {
+            switch (w) {
+            case 0: {
+                Fronts[k].xr = i;
+                Fronts[k].yr = wave[i];
+                if (checkFront(Fronts[k])) {
+                    k++;
+                    // Fronts[k+1].xl := i;  //
+                    // Fronts[k+1].yl := wave[i]; //
+                }
+                State = 1;
+                break;
+            }
+            case 1: {
+                Fronts[k].xr = i;
+                Fronts[k].yr = wave[i];
+                if (checkFront(Fronts[k])) {
+                    k++;
+                }
+                Fronts[k].xl = i;
+                Fronts[k].yl = wave[i];
+                State = 2;
+                break;
+            }
+            }
+            break;
+        }
+        }
+        i++;
+    }
+
+    FrontsSize = k;
+    xref = startpoint;
+    acode = 0;
+    i = 0;
+
+    for (k = 0; k < FrontsSize; ++k) {
+        if ((Fronts[k].xr > (xref + 12)) && (Fronts[k].xr < (xref + 20))) {
+            acode = acode >> 1;
+            if (Fronts[k].yl > Fronts[k].yr) {
+                acode = acode | 0x80000000;  // 1 = '\'
+            }
+            xref = Fronts[k].xr;
+            i++;
+            if (i >= 32) break;
+        }
+    }
+    if (i != 32) {
+        Result = false;
+        result = 0;
+        std::cout << "Unable to decode! fronts:" << i << std::endl;
+    }
+    else {
+        Result = true;
+        result = acode;
+    }
+    return Result;
+}
+
+bool WaveAnalyzer::checkFront(const WaveAnalyzer::TWaveFront& front)
+{
+    int AFTOL = 32767 / 2;
+    int DFTOL = 4;
+    bool Result = false;
+    if (std::abs(front.yr - front.yl) >= AFTOL) {
+        if ((front.xr - front.xl) <= DFTOL) {
+            Result = true;
+        }
+    }
+    return Result;
+}
+
+WaveAnalyzer::WaveAnalyzer() {}
+
+void WaveAnalyzer::addBufferWithTimecode(const SignalsBuffer& samples, GstClockTime timestamp, GstClockTime duration)
+{
+    // std::cout << "NEW BUFFER" << std::endl;
+    _buffers.insert(_buffers.end(), samples.begin(), samples.end());
+    unsigned long size = samples.size();
+
+    GstClockTime timePerSample = duration / size;
+
+    for (unsigned long i = 0; i < size; ++i) {
+        _timeBuffers.push_back(timestamp + i * timePerSample);
+    }
+
+    analyze();
 }
 
 bool WaveAnalyzer::getNextBuffer(WaveAnalyzer::SignalsBuffer& output)
@@ -87,34 +300,5 @@ bool WaveAnalyzer::getNextBuffer(WaveAnalyzer::SignalsBuffer& output)
         _outputBuffers.pop();
         return true;
     }
-    return false;
-}
-
-bool WaveAnalyzer::findNextSignal(WaveAnalyzer::SignalSlice& slice)
-{
-    unsigned int size = getSamplesAvailable();
-    SampleType prevSample = getSampleAt(_lastPos);
-    for (unsigned int i = _lastPos + 1; i < size; ++i) {
-        SampleType nextSample = getSampleAt(i);
-        if (std::abs(prevSample - nextSample) > FRONT_THRESHOLD) {
-            std::cout << "Ramp:" << prevSample - nextSample << std::endl;
-            unsigned int beginPos = std::max(0, static_cast<int>(i) - static_cast<int>(SAMPLE_OFFSET));
-            unsigned int endPos = beginPos + SAMPLE_SIZE;
-            if (endPos > size) {
-                return false;
-            }
-            else {
-                SignalSlice newSlice;
-                newSlice.begin = beginPos;
-                newSlice.end = endPos;
-                newSlice.bufferIndex = getBufferIndexBySampleIndex(beginPos);
-                slice = newSlice;
-                _lastPos = std::min(endPos + 40, size);
-                return true;
-            }
-        }
-    }
-
-
     return false;
 }

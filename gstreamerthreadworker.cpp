@@ -46,7 +46,7 @@ GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, ProgramData* data)
     std::vector<signed short> outputVector(info.size / 2);
     memcpy(outputVector.data(), info.data, info.size);
 
-    data->worker->addSampleAndTimestamp(outputVector, buffer->pts);
+    data->worker->addSampleAndTimestamp(outputVector, buffer->pts, buffer->duration);
     data->worker->sendSignalBuffers();
 
 
@@ -167,9 +167,9 @@ void GstreamerThreadWorker::handleCommands(ProgramData* data)
     _mutex.unlock();
 }
 
-void GstreamerThreadWorker::addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time)
+void GstreamerThreadWorker::addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration)
 {
-    _analyzer.addBufferWithTimecode(samples, time);
+    _analyzer.addBufferWithTimecode(samples, time, duration);
 }
 
 void GstreamerThreadWorker::sendSignalBuffers()
