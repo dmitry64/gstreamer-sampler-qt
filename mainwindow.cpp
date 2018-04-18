@@ -1,16 +1,37 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QDebug>
+#include <QCloseEvent>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    QObject::connect(this, &MainWindow::seekPipeline, &worker, &GstreamerThreadWorker::seekPipeline);
+    QObject::connect(&worker, &GstreamerThreadWorker::sampleReady, this, &MainWindow::onSample);
+    QObject::connect(&worker, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrame);
+    QObject::connect(&worker, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCut);
+
+    worker.start();
 }
 
 MainWindow::~MainWindow()
 {
+    qDebug() << "Deleting mainwindow...";
+
     delete ui;
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    worker.stopWorker();
+    while (worker.isRunning()) {
+        qApp->processEvents();
+    }
+
+    event->accept();
 }
 
 void MainWindow::on_startPipelineButton_released()

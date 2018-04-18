@@ -11,3 +11,9 @@ void SeekCommand::handleCommand(ProgramData* data)
     seek_event = gst_event_new_seek(8.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET, ns, GST_SEEK_TYPE_NONE, 0);
     gst_element_send_event(data->source, seek_event);
 }
+
+void StopCommand::handleCommand(ProgramData* data)
+{
+    std::cout << "Stop pipeline..." << std::endl;
+    g_main_loop_quit(data->loop);
+}

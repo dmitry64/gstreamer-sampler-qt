@@ -24,4 +24,11 @@ public:
     void handleCommand(ProgramData* data);
 };
 
+class StopCommand : public Command
+{
+public:
+    StopCommand() {}
+    void handleCommand(ProgramData* data);
+};
+
 #endif  // COMMANDS_H

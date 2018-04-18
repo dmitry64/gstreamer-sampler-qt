@@ -12,19 +12,8 @@ static void seek_to_time(GstElement* pipeline, gint64 time_nanoseconds)
 
 gboolean timeout_callback(gpointer dataptr)
 {
-    static int counter = 0;
     ProgramData* data = (ProgramData*) dataptr;
 
-
-    /*
-        counter++;
-        g_print("timeout_callback called %d times\n", counter);
-        if (20 == counter) {
-            seek_to_time(data->source, 0);
-            // g_main_loop_quit(data->loop);
-            return FALSE;
-        }
-    */
     data->worker->handleCommands(data);
 
     return TRUE;
@@ -288,6 +277,15 @@ void GstreamerThreadWorker::mainLoop()
 
     std::cout << "GStreamer thread finished..." << std::endl;
     emit finished();
+}
+
+void GstreamerThreadWorker::stopWorker()
+{
+    std::cout << "Stop worker" << std::endl;
+    StopCommand* command = new StopCommand();
+    _mutex.lock();
+    _commands.push(command);
+    _mutex.unlock();
 }
 
 void GstreamerThreadWorker::seekPipeline(int pos)

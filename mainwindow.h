@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "gstreamerthreadworker.h"
 
 namespace Ui
 {
@@ -16,6 +17,8 @@ public:
     explicit MainWindow(QWidget* parent = 0);
     ~MainWindow();
 
+private:
+    void closeEvent(QCloseEvent* event);
 private slots:
     void on_startPipelineButton_released();
 
@@ -34,6 +37,7 @@ signals:
 
 private:
     Ui::MainWindow* ui;
+    GstreamerThreadWorker worker;
 };
 
 #endif  // MAINWINDOW_H
