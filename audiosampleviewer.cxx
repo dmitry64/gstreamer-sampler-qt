@@ -20,7 +20,7 @@ void AudioSampleViewer::drawSample(const std::vector<signed short>& samples)
 {
     // qDebug() << "Samples:" << samples.size();
     _currentSamples = samples;
-    repaint();
+    update();
 }
 
 void AudioSampleViewer::paintEvent(QPaintEvent* event)
