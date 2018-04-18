@@ -56,6 +56,7 @@ public:
     void analyze();
     bool getNextBuffer(SignalsBuffer& output);
     bool getEnoughData();
+    void dumpToFile();
 };
 
 #endif  // WAVEANALYZER_HPP

@@ -8,6 +8,7 @@ void WaveAnalyzerThread::run()
         _dataAvailable.wait(&_inputMutex);
         _analyzer.analyze();
         _inputMutex.unlock();
+        _analyzer.dumpToFile();
     }
 }
 

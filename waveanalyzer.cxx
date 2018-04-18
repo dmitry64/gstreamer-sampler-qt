@@ -290,3 +290,12 @@ bool WaveAnalyzer::getEnoughData()
 {
     return _buffers.size() > BASELINE_WINDOW_WIDTH * 4;
 }
+
+void WaveAnalyzer::dumpToFile()
+{
+    if (_syncPoints.size() > 30) {
+        while (!_syncPoints.empty()) {
+            _syncPoints.pop();
+        }
+    }
+}
