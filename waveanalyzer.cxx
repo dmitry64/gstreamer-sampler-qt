@@ -12,11 +12,11 @@ void WaveAnalyzer::analyze()
     double AvTOL = 12;
 
     while (true) {
-        if (_buffers.size() > width * 2) {
+        if (_buffers.size() > width * 4) {
             SignalsBuffer::iterator baseLine = _buffers.end();
             bool found = false;
 
-            for (SignalsBuffer::iterator it = (_buffers.begin() + width); it != (_buffers.end() - width); ++it) {
+            for (SignalsBuffer::iterator it = (_buffers.begin() + width); (it + width) <= _buffers.end(); ++it) {
                 SignalsBuffer::iterator leftBegin = it - width;
                 SignalsBuffer::iterator leftEnd = it;
                 SignalsBuffer::iterator rightBegin = it;
@@ -24,12 +24,16 @@ void WaveAnalyzer::analyze()
                 double leftAvg = std::accumulate(leftBegin, leftEnd, 0.0) / static_cast<double>(width);
                 double rightAvg = std::accumulate(rightBegin, rightEnd, 0.0) / static_cast<double>(width);
 
+
                 if (std::abs(leftAvg - rightAvg) < AvTOL) {
                     baseLine = it;
                     baseLine++;
                     // std::cout << "BASELINE" << std::endl;
                     // std::cout << "WINDOW:" << leftAvg << " " << rightAvg << std::endl;
                     break;
+                }
+                else {
+                    // std::cout << "WINDOW:" << leftAvg << " " << rightAvg << " res:" << std::abs(leftAvg - rightAvg) << std::endl;
                 }
             }
 
@@ -45,7 +49,7 @@ void WaveAnalyzer::analyze()
 
             // std::cout << "Searching signal = " << std::distance(baseLine, _buffers.end()) << std::endl;
 
-            for (SignalsBuffer::iterator it = baseLine; it != (_buffers.end() - width2); ++it) {
+            for (SignalsBuffer::iterator it = baseLine; (it + width2) <= _buffers.end(); ++it) {
                 SignalsBuffer::iterator leftBegin = it - width2;
                 SignalsBuffer::iterator leftEnd = it;
                 SignalsBuffer::iterator rightBegin = it;
@@ -85,10 +89,7 @@ void WaveAnalyzer::analyze()
                 buff.insert(buff.begin(), beginIt, endIt);
                 unsigned int res = 0;
                 if (decodeBuffer(buff, res)) {
-                    std::cout << "DECODED:" << res << std::endl;
-                }
-                else {
-                    decodeBuffer(buff, res);
+                    std::cout << "COORD:" << res << " ";
                 }
 
 
@@ -96,7 +97,7 @@ void WaveAnalyzer::analyze()
                 std::vector<GstClockTime>::iterator timeItEnd = _timeBuffers.begin() + std::distance(_buffers.begin(), endIt);
 
                 GstClockTime bufferTime = timeItBegin.operator*();
-                // std::cout << "time:" << bufferTime << std::endl;
+                std::cout << "TIME:" << bufferTime << std::endl;
                 _outputBuffers.push(buff);
 
                 // std::cout << "FOUND begin:" << std::distance(_buffers.begin(), beginIt) << " end:" << std::distance(_buffers.begin(), endIt) << std::endl;
