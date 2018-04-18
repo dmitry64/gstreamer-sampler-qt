@@ -36,13 +36,15 @@ void AudioSampleViewer::paintEvent(QPaintEvent* event)
     float step = static_cast<float>(width) / static_cast<float>(size);
     painter.setPen(Qt::red);
 
-    float currentX = 0;
+    float currentX = 0.0f;
     QPointF begin = QPointF(0, height / 2);
     for (const signed short sample : _currentSamples) {
         // qDebug() << sample;
         float samplePos = static_cast<float>(height) - ((static_cast<float>(sample) + 32767.0f) / 65535.0f) * static_cast<float>(height);
         QPointF end(currentX, samplePos);
-        painter.drawLine(begin, end);
+        if (currentX != 0.0f) {
+            painter.drawLine(begin, end);
+        }
         begin = end;
         currentX += step;
     }
