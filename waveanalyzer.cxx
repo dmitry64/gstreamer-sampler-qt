@@ -8,7 +8,7 @@
 void WaveAnalyzer::analyze()
 {
     while (true) {
-        if (_buffers.size() > BASELINE_WINDOW_WIDTH * 4) {
+        if (getEnoughData()) {
             SignalsBuffer::iterator baseLine = _buffers.end();
             bool found = false;
 
@@ -77,13 +77,16 @@ void WaveAnalyzer::analyze()
 
                 GstClockTime bufferTime = timeItBegin.operator*();
                 if (decodeBuffer(buff, res)) {
-                    std::cout << "COORD:" << res << " ";
+                    // std::cout << "COORD:" << res << " ";
                     SyncPoint syncPoint;
                     syncPoint.coord = res;
                     syncPoint.time = bufferTime;
                     _syncPoints.push(syncPoint);
                 }
-                std::cout << "TIME:" << bufferTime << std::endl;
+                else {
+                    std::cout << "FAIL! :" << buff.size() << " " << res << " " << bufferTime << std::endl;
+                }
+                // std::cout << "TIME:" << bufferTime << std::endl;
 
                 _outputBuffers.push(buff);
 
@@ -281,4 +284,9 @@ bool WaveAnalyzer::getNextBuffer(WaveAnalyzer::SignalsBuffer& output)
         return true;
     }
     return false;
+}
+
+bool WaveAnalyzer::getEnoughData()
+{
+    return _buffers.size() > BASELINE_WINDOW_WIDTH * 4;
 }

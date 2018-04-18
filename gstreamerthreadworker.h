@@ -18,6 +18,7 @@
 
 #include "commands.h"
 #include "waveanalyzer.hpp"
+#include "waveanalyzerthread.hpp"
 
 class GstreamerThreadWorker;
 
@@ -36,7 +37,9 @@ class GstreamerThreadWorker : public QThread
 private:
     std::mutex _mutex;
     std::queue<Command*> _commands;
-    WaveAnalyzer _analyzer;
+
+    WaveAnalyzerThread _waveThread;
+
     void run();
     void mainLoop();
 

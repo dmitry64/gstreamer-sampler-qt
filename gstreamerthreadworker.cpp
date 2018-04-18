@@ -158,14 +158,13 @@ void GstreamerThreadWorker::handleCommands(ProgramData* data)
 
 void GstreamerThreadWorker::addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration)
 {
-    _analyzer.addBufferWithTimecode(samples, time, duration);
-    _analyzer.analyze();
+    _waveThread.addSampleAndTimestamp(samples, time, duration);
 }
 
 void GstreamerThreadWorker::sendSignalBuffers()
 {
     std::vector<signed short> samples;
-    while (_analyzer.getNextBuffer(samples)) {
+    while (_waveThread.getNextBuffer(samples)) {
         emit sampleCutReady(samples);
     }
 }
@@ -264,6 +263,7 @@ void GstreamerThreadWorker::mainLoop()
     gst_element_set_state(data->audiosink, GST_STATE_PLAYING);
     gst_element_set_state(data->source, GST_STATE_PLAYING);
 
+    _waveThread.startAnalysys();
     std::cout << "Starting main loop..." << std::endl;
     g_main_loop_run(data->loop);
     std::cout << "Main loop finished..." << std::endl;

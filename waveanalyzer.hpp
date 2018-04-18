@@ -5,8 +5,6 @@
 #include <vector>
 #include <queue>
 #include <array>
-#include <mutex>
-
 const static unsigned int SAMPLE_SIZE = 550;
 const static int FRONT_THRESHOLD = 12000;
 const static unsigned int SAMPLE_OFFSET = 100;
@@ -43,12 +41,9 @@ class WaveAnalyzer
     };
 
 private:
-    std::mutex _inputBuffersMutex;
     SignalsBuffer _buffers;
     std::vector<GstClockTime> _timeBuffers;
-    std::mutex _outputBuffersMutex;
     std::queue<SignalsBuffer> _outputBuffers;
-    std::mutex _syncPointsMutex;
     std::queue<SyncPoint> _syncPoints;
 
 private:
@@ -60,6 +55,7 @@ public:
     void addBufferWithTimecode(const SignalsBuffer& samples, GstClockTime timestamp, GstClockTime duration);
     void analyze();
     bool getNextBuffer(SignalsBuffer& output);
+    bool getEnoughData();
 };
 
 #endif  // WAVEANALYZER_HPP
