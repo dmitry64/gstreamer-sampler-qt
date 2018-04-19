@@ -8,12 +8,12 @@ const int samplesSize = 4;
 
 AudioVisualizer::AudioVisualizer(QWidget* parent)
     : QWidget(parent)
-    , _outputFile("TESTSAMPLES.bin")
+// , _outputFile("TESTSAMPLES.bin")
 {
     _maxHeight = 1.0f;
     _pause = false;
 
-    _outputFile.open(QIODevice::WriteOnly);
+    // _outputFile.open(QIODevice::WriteOnly);
     _counter = 0;
 }
 
@@ -22,7 +22,7 @@ AudioVisualizer::~AudioVisualizer() {}
 void AudioVisualizer::onSample(std::vector<signed short>& samples)
 {
     // qDebug() << samples.size();
-    if (_counter < 100) {
+    /*if (_counter < 100) {
         _outputFile.write(reinterpret_cast<char*>(samples.data()), samples.size() * 2);
         _counter++;
     }
@@ -30,7 +30,7 @@ void AudioVisualizer::onSample(std::vector<signed short>& samples)
         if (_outputFile.isOpen()) {
             _outputFile.close();
         }
-    }
+    }*/
     if (!_pause) {
         if (_data.size() < samplesSize * 4) {
             _data.push_back(samples);

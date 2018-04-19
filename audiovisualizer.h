@@ -16,7 +16,7 @@ class AudioVisualizer : public QWidget
     std::list<std::vector<signed short>> _data;
     float _maxHeight;
     bool _pause;
-    QFile _outputFile;
+    // QFile _outputFile;
     int _counter;
 
 public:
