@@ -30,6 +30,7 @@ public slots:
     void onSample(std::vector<signed short> samples);
     void onFrame(std::vector<unsigned char> frame);
     void onSampleCut(std::vector<signed short> samples);
+    void onNumberDecoded(unsigned int number);
 
 signals:
     void startPipeline();

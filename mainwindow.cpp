@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget* parent)
     QObject::connect(&worker, &GstreamerThreadWorker::sampleReady, this, &MainWindow::onSample);
     QObject::connect(&worker, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrame);
     QObject::connect(&worker, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCut);
+    QObject::connect(&worker, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNumberDecoded);
 
     worker.start();
 }
@@ -52,6 +53,17 @@ void MainWindow::onFrame(std::vector<unsigned char> frame)
 void MainWindow::onSampleCut(std::vector<signed short> samples)
 {
     ui->sampleViewer->drawSample(samples);
+}
+
+void MainWindow::onNumberDecoded(unsigned int number)
+{
+    ui->numberLabel->setText(QString::number(number));
+    QString bitsStr;
+    bitsStr += QString::number((number >> 3) & 0x00000001);
+    bitsStr += QString::number((number >> 2) & 0x00000001);
+    bitsStr += QString::number((number >> 1) & 0x00000001);
+    bitsStr += QString::number(number & 0x00000001);
+    ui->lastBitsLabel->setText(bitsStr);
 }
 
 void MainWindow::on_seekButton_released()

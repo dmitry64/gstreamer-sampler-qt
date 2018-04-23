@@ -80,6 +80,43 @@
            </widget>
           </item>
           <item>
+           <widget class="QGroupBox" name="coordGroupBox">
+            <property name="title">
+             <string>Signal decoder</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <item>
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Current number:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="numberLabel">
+               <property name="text">
+                <string>0</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Last 4 bits:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lastBitsLabel">
+               <property name="text">
+                <string>0000</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
            <spacer name="verticalSpacer">
             <property name="orientation">
              <enum>Qt::Vertical</enum>

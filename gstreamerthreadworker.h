@@ -59,6 +59,7 @@ signals:
     void sampleReady(std::vector<signed short> samples);
     void frameReady(std::vector<unsigned char> frame);
     void sampleCutReady(std::vector<signed short> samples);
+    void coordReady(unsigned int coord);
     void finished();
 
 public slots:

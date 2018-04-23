@@ -167,6 +167,10 @@ void GstreamerThreadWorker::sendSignalBuffers()
     while (_waveThread.getNextBuffer(samples)) {
         emit sampleCutReady(samples);
     }
+    unsigned int coord;
+    while (_waveThread.getNextCoord(coord)) {
+        emit coordReady(coord);
+    }
 }
 
 GstreamerThreadWorker::GstreamerThreadWorker(QObject* parent)

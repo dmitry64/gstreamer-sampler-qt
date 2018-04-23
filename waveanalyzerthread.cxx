@@ -8,7 +8,7 @@ void WaveAnalyzerThread::run()
         _dataAvailable.wait(&_inputMutex);
         _analyzer.analyze();
         _inputMutex.unlock();
-        _analyzer.dumpToFile();
+        //_analyzer.dumpToFile();
     }
 }
 
@@ -41,6 +41,14 @@ bool WaveAnalyzerThread::getNextBuffer(std::vector<signed short>& output)
 {
     _inputMutex.lock();
     bool res = _analyzer.getNextBuffer(output);
+    _inputMutex.unlock();
+    return res;
+}
+
+bool WaveAnalyzerThread::getNextCoord(unsigned int& result)
+{
+    _inputMutex.lock();
+    bool res = _analyzer.getNextCoord(result);
     _inputMutex.unlock();
     return res;
 }

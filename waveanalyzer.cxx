@@ -286,6 +286,17 @@ bool WaveAnalyzer::getNextBuffer(WaveAnalyzer::SignalsBuffer& output)
     return false;
 }
 
+bool WaveAnalyzer::getNextCoord(unsigned int& coord)
+{
+    if (!_syncPoints.empty()) {
+        coord = _syncPoints.front().coord;
+        _syncPoints.pop();
+
+        return true;
+    }
+    return false;
+}
+
 bool WaveAnalyzer::getEnoughData()
 {
     return _buffers.size() > BASELINE_WINDOW_WIDTH * 4;

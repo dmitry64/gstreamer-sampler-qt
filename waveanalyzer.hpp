@@ -55,6 +55,7 @@ public:
     void addBufferWithTimecode(const SignalsBuffer& samples, GstClockTime timestamp, GstClockTime duration);
     void analyze();
     bool getNextBuffer(SignalsBuffer& output);
+    bool getNextCoord(unsigned int& coord);
     bool getEnoughData();
     void dumpToFile();
 };
