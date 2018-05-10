@@ -9,13 +9,22 @@ MainWindow::MainWindow(QWidget* parent)
 {
     ui->setupUi(this);
 
-    QObject::connect(this, &MainWindow::seekPipeline, &worker, &GstreamerThreadWorker::seekPipeline);
-    QObject::connect(&worker, &GstreamerThreadWorker::sampleReady, this, &MainWindow::onSample);
-    QObject::connect(&worker, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrame);
-    QObject::connect(&worker, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCut);
-    QObject::connect(&worker, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNumberDecoded);
+    QObject::connect(&workerLeft, &GstreamerThreadWorker::sampleReady, this, &MainWindow::onSampleLeft);
+    QObject::connect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
+    QObject::connect(&workerLeft, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCutLeft);
+    QObject::connect(&workerLeft, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNewCoord);
 
-    worker.start();
+    QObject::connect(&workerRight, &GstreamerThreadWorker::sampleReady, this, &MainWindow::onSampleRight);
+    QObject::connect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
+    QObject::connect(&workerRight, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCutRight);
+    QObject::connect(&workerRight, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNewCoord);
+
+
+    workerLeft.setCameraType(GstreamerThreadWorker::CameraType::eCameraLeft);
+    workerRight.setCameraType(GstreamerThreadWorker::CameraType::eCameraRight);
+
+    workerLeft.start();
+    workerRight.start();
 }
 
 MainWindow::~MainWindow()
@@ -27,35 +36,52 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    worker.stopWorker();
-    while (worker.isRunning()) {
+    workerLeft.stopWorker();
+    while (workerLeft.isRunning()) {
         qApp->processEvents();
     }
+
+    workerRight.stopWorker();
+    while (workerRight.isRunning()) {
+        qApp->processEvents();
+    }
+
 
     event->accept();
 }
 
-void MainWindow::on_startPipelineButton_released()
+
+void MainWindow::onSampleLeft(std::vector<signed short> samples)
 {
-    emit startPipeline();
+    ui->audioWidgetLeft->onSample(samples);
 }
 
-void MainWindow::onSample(std::vector<signed short> samples)
+void MainWindow::onSampleRight(std::vector<signed short> samples)
 {
-    ui->audioWidget->onSample(samples);
+    ui->audioWidgetRight->onSample(samples);
 }
 
-void MainWindow::onFrame(std::vector<unsigned char> frame)
+void MainWindow::onFrameLeft(std::vector<unsigned char> frame)
 {
-    ui->videoWidget->drawFrame(frame);
+    ui->videoWidgetLeft->drawFrame(frame);
 }
 
-void MainWindow::onSampleCut(std::vector<signed short> samples)
+void MainWindow::onFrameRight(std::vector<unsigned char> frame)
 {
-    ui->sampleViewer->drawSample(samples);
+    ui->videoWidgetRight->drawFrame(frame);
 }
 
-void MainWindow::onNumberDecoded(unsigned int number)
+void MainWindow::onSampleCutLeft(std::vector<signed short> samples)
+{
+    ui->sampleViewerLeft->drawSample(samples);
+}
+
+void MainWindow::onSampleCutRight(std::vector<signed short> samples)
+{
+    ui->sampleViewerRight->drawSample(samples);
+}
+
+void MainWindow::onNumberDecodedLeft(unsigned int number)
 {
     ui->numberLabel->setText(QString::number(number));
     QString bitsStr;
@@ -66,13 +92,14 @@ void MainWindow::onNumberDecoded(unsigned int number)
     ui->lastBitsLabel->setText(bitsStr);
 }
 
-void MainWindow::on_seekButton_released()
+void MainWindow::onNewCoord(unsigned int coord, GstClockTime time, int cameraIndex)
 {
-    int pos = ui->seekPosSpinBox->value();
-    emit seekPipeline(pos);
+    _coordBuffers.at(cameraIndex).emplace_back(coord, time);
+    qDebug() << "ARRAYS:" << _coordBuffers.at(0).size() << _coordBuffers.at(1).size();
 }
 
-void MainWindow::on_pushButton_released()
+void MainWindow::on_audioPauseButton_released()
 {
-    ui->audioWidget->pause();
+    ui->audioWidgetLeft->pause();
+    ui->audioWidgetRight->pause();
 }

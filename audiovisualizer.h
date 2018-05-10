@@ -23,7 +23,7 @@ public:
     explicit AudioVisualizer(QWidget* parent = 0);
     ~AudioVisualizer();
 
-    void onSample(std::vector<signed short>& samples);
+    void onSample(const std::vector<signed short> &samples);
     void pause();
 
 protected:

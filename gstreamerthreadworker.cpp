@@ -137,6 +137,11 @@ static gboolean gst_my_filter_sink_event(GstPad* pad, GstObject* parent, GstEven
 }
 
 
+void GstreamerThreadWorker::setCameraType(const CameraType& cameraType)
+{
+    _cameraType = cameraType;
+}
+
 void GstreamerThreadWorker::run()
 {
     mainLoop();
@@ -168,8 +173,9 @@ void GstreamerThreadWorker::sendSignalBuffers()
         emit sampleCutReady(samples);
     }
     unsigned int coord;
-    while (_waveThread.getNextCoord(coord)) {
-        emit coordReady(coord);
+    GstClockTime time;
+    while (_waveThread.getNextCoord(coord, time)) {
+        emit coordReady(coord, time, static_cast<int>(_cameraType));
     }
 }
 
@@ -206,16 +212,18 @@ void GstreamerThreadWorker::mainLoop()
     data->loop = g_main_loop_new(NULL, FALSE);
     g_timeout_add(100, timeout_callback, data);
 
+    int id = static_cast<int>(_cameraType);
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
         // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink sync=true");
-        ("rtspsrc location=rtsp://192.168.1.100/H.264/media.smp sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! decodebin ! videoconvert ! videoscale ! "
+        ("rtspsrc location=rtsp://192.168.1.100/H.264/media.smp sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! tee name=t ! queue ! mpegtsmux ! filesink location=file%d.ts t. ! decodebin ! videoconvert ! videoscale ! "
          "video/x-raw,format=RGB,width=1920,height=1080 ! appsink "
          "name=myvideosink "
          "caps=\"video/x-raw,format=RGB,width=1920,height=1080\" sync=true demux. ! queue ! capsfilter caps=\"application/x-rtp,media=audio\" ! decodebin !"
          "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved ! appsink "
          "caps=\"audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved\" "
-         "name=myaudiosink sync=true");
+         "name=myaudiosink sync=true",
+         id);
     std::cout << "Pipeline string: \n" << string << std::endl;
     data->source = gst_parse_launch(string, NULL);
     g_free(string);
@@ -288,15 +296,6 @@ void GstreamerThreadWorker::stopWorker()
 {
     std::cout << "Stop worker" << std::endl;
     StopCommand* command = new StopCommand();
-    _mutex.lock();
-    _commands.push(command);
-    _mutex.unlock();
-}
-
-void GstreamerThreadWorker::seekPipeline(int pos)
-{
-    std::cout << "Seek command to:" << pos << std::endl;
-    SeekCommand* command = new SeekCommand(pos);
     _mutex.lock();
     _commands.push(command);
     _mutex.unlock();

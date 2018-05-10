@@ -7,7 +7,7 @@ int main(int argc, char* argv[])
     QApplication a(argc, argv);
     qRegisterMetaType<std::vector<signed short>>("std::vector<signed short>");
     qRegisterMetaType<std::vector<unsigned char>>("std::vector<unsigned char>");
-
+    qRegisterMetaType<GstClockTime>("GstClockTime");
     MainWindow w;
     w.show();
 

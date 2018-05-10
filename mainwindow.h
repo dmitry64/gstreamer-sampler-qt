@@ -20,25 +20,23 @@ public:
 private:
     void closeEvent(QCloseEvent* event);
 private slots:
-    void on_startPipelineButton_released();
-
-    void on_seekButton_released();
-
-    void on_pushButton_released();
+    void on_audioPauseButton_released();
 
 public slots:
-    void onSample(std::vector<signed short> samples);
-    void onFrame(std::vector<unsigned char> frame);
-    void onSampleCut(std::vector<signed short> samples);
-    void onNumberDecoded(unsigned int number);
-
-signals:
-    void startPipeline();
-    void seekPipeline(int pos);
+    void onSampleLeft(std::vector<signed short> samples);
+    void onSampleRight(std::vector<signed short> samples);
+    void onFrameLeft(std::vector<unsigned char> frame);
+    void onFrameRight(std::vector<unsigned char> frame);
+    void onSampleCutLeft(std::vector<signed short> samples);
+    void onSampleCutRight(std::vector<signed short> samples);
+    void onNumberDecodedLeft(unsigned int number);
+    void onNewCoord(unsigned int coord, GstClockTime time, int cameraIndex);
 
 private:
     Ui::MainWindow* ui;
-    GstreamerThreadWorker worker;
+    GstreamerThreadWorker workerLeft;
+    GstreamerThreadWorker workerRight;
+    std::array<std::vector<std::pair<unsigned int, GstClockTime>>, 2> _coordBuffers;
 };
 
 #endif  // MAINWINDOW_H

@@ -11,7 +11,7 @@ VideoWidget::VideoWidget(QWidget* parent)
 
 VideoWidget::~VideoWidget() {}
 
-void VideoWidget::drawFrame(std::vector<unsigned char>& frame)
+void VideoWidget::drawFrame(const std::vector<unsigned char>& frame)
 {
     frameList.push_back(frame);
 }

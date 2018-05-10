@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0">
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_5" stretch="2,1">
+     <layout class="QVBoxLayout" name="verticalLayout_5" stretch="2,1,1">
       <property name="rightMargin">
        <number>0</number>
       </property>
@@ -34,43 +34,13 @@
         <item>
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="QPushButton" name="startPipelineButton">
-            <property name="text">
-             <string>Start pipeline</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="seekGroupBox">
-            <property name="title">
-             <string>Seek</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_3">
-             <item>
-              <widget class="QSpinBox" name="seekPosSpinBox">
-               <property name="maximum">
-                <number>999999999</number>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="seekButton">
-               <property name="text">
-                <string>Seek</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
            <widget class="QGroupBox" name="groupBox">
             <property name="title">
              <string>Playback</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_4">
              <item>
-              <widget class="QPushButton" name="pushButton">
+              <widget class="QPushButton" name="audioPauseButton">
                <property name="text">
                 <string>Audio Play/Pause</string>
                </property>
@@ -132,21 +102,61 @@
          </layout>
         </item>
         <item>
-         <widget class="VideoWidget" name="videoWidget" native="true"/>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="VideoWidget" name="videoWidgetLeft" native="true"/>
+          </item>
+          <item>
+           <widget class="VideoWidget" name="videoWidgetRight" native="true"/>
+          </item>
+         </layout>
         </item>
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,3">
+       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,1">
         <property name="bottomMargin">
          <number>0</number>
         </property>
         <item>
-         <widget class="AudioVisualizer" name="audioWidget" native="true"/>
+         <layout class="QHBoxLayout" name="audioLayoutRight" stretch="1,3">
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="AudioVisualizer" name="audioWidgetRight" native="true"/>
+          </item>
+          <item>
+           <widget class="AudioSampleViewer" name="sampleViewerRight" native="true"/>
+          </item>
+         </layout>
         </item>
         <item>
-         <widget class="AudioSampleViewer" name="sampleViewer" native="true"/>
+         <layout class="QHBoxLayout" name="audioLayoutLeft" stretch="1,3">
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="AudioVisualizer" name="audioWidgetLeft" native="true"/>
+          </item>
+          <item>
+           <widget class="AudioSampleViewer" name="sampleViewerLeft" native="true"/>
+          </item>
+         </layout>
         </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="">
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
        </layout>
       </item>
      </layout>

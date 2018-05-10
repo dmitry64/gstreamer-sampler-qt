@@ -45,10 +45,10 @@ bool WaveAnalyzerThread::getNextBuffer(std::vector<signed short>& output)
     return res;
 }
 
-bool WaveAnalyzerThread::getNextCoord(unsigned int& result)
+bool WaveAnalyzerThread::getNextCoord(unsigned int& result, GstClockTime& time)
 {
     _inputMutex.lock();
-    bool res = _analyzer.getNextCoord(result);
+    bool res = _analyzer.getNextCoord(result, time);
     _inputMutex.unlock();
     return res;
 }

@@ -26,7 +26,7 @@ public:
     void startAnalysys();
     void addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration);
     bool getNextBuffer(std::vector<signed short>& output);
-    bool getNextCoord(unsigned int& result);
+    bool getNextCoord(unsigned int& result, GstClockTime& time);
 };
 
 #endif  // WAVEANALYZERTHREAD_HPP

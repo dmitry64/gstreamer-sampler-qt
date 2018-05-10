@@ -19,7 +19,7 @@ AudioVisualizer::AudioVisualizer(QWidget* parent)
 
 AudioVisualizer::~AudioVisualizer() {}
 
-void AudioVisualizer::onSample(std::vector<signed short>& samples)
+void AudioVisualizer::onSample(const std::vector<signed short>& samples)
 {
     // qDebug() << samples.size();
     /*if (_counter < 100) {

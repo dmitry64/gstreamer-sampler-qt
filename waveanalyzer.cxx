@@ -286,10 +286,11 @@ bool WaveAnalyzer::getNextBuffer(WaveAnalyzer::SignalsBuffer& output)
     return false;
 }
 
-bool WaveAnalyzer::getNextCoord(unsigned int& coord)
+bool WaveAnalyzer::getNextCoord(unsigned int& coord, GstClockTime& time)
 {
     if (!_syncPoints.empty()) {
         coord = _syncPoints.front().coord;
+        time = _syncPoints.front().time;
         _syncPoints.pop();
 
         return true;

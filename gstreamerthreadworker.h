@@ -34,11 +34,20 @@ public:
 class GstreamerThreadWorker : public QThread
 {
     Q_OBJECT
+
+public:
+    enum CameraType
+    {
+        eCameraLeft = 0,
+        eCameraRight = 1
+    };
+
 private:
     std::mutex _mutex;
     std::queue<Command*> _commands;
 
     WaveAnalyzerThread _waveThread;
+    CameraType _cameraType;
 
     void run();
     void mainLoop();
@@ -55,16 +64,14 @@ public:
 
     void sendAudioSample(std::vector<signed short>& samples);
     void sendVideoSample(std::vector<unsigned char>& frame);
+    void setCameraType(const CameraType& cameraType);
+
 signals:
     void sampleReady(std::vector<signed short> samples);
     void frameReady(std::vector<unsigned char> frame);
     void sampleCutReady(std::vector<signed short> samples);
-    void coordReady(unsigned int coord);
+    void coordReady(unsigned int coord, GstClockTime time, int cameraIndex);
     void finished();
-
-public slots:
-
-    void seekPipeline(int pos);
 };
 
 #endif  // GSTREAMERTHREADWORKER_H
