@@ -10,12 +10,12 @@ MainWindow::MainWindow(QWidget* parent)
     ui->setupUi(this);
 
     QObject::connect(&workerLeft, &GstreamerThreadWorker::sampleReady, this, &MainWindow::onSampleLeft);
-    QObject::connect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
+    // QObject::connect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
     QObject::connect(&workerLeft, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCutLeft);
     QObject::connect(&workerLeft, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNewCoord);
 
     QObject::connect(&workerRight, &GstreamerThreadWorker::sampleReady, this, &MainWindow::onSampleRight);
-    QObject::connect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
+    // QObject::connect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
     QObject::connect(&workerRight, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCutRight);
     QObject::connect(&workerRight, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNewCoord);
 
@@ -25,6 +25,16 @@ MainWindow::MainWindow(QWidget* parent)
 
     workerLeft.start();
     workerRight.start();
+
+    QObject::connect(&playerRight, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameRight);
+    QObject::connect(&playerLeft, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameLeft);
+
+    playerLeft.setCameraType(GstreamerVideoPlayer::CameraType::eCameraLeft);
+    playerRight.setCameraType(GstreamerVideoPlayer::CameraType::eCameraRight);
+
+    QThread::currentThread()->sleep(1);
+    playerLeft.start();
+    playerRight.start();
 }
 
 MainWindow::~MainWindow()
@@ -43,6 +53,16 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
     workerRight.stopWorker();
     while (workerRight.isRunning()) {
+        qApp->processEvents();
+    }
+
+    playerLeft.stopWorker();
+    while (playerLeft.isRunning()) {
+        qApp->processEvents();
+    }
+
+    playerRight.stopWorker();
+    while (playerRight.isRunning()) {
         qApp->processEvents();
     }
 
@@ -102,4 +122,13 @@ void MainWindow::on_audioPauseButton_released()
 {
     ui->audioWidgetLeft->pause();
     ui->audioWidgetRight->pause();
+}
+
+void MainWindow::on_seekButton_released()
+{
+    static int counter = 0;
+    counter++;
+    qDebug() << "SEEK:" << _coordBuffers.at(0).at(3 * counter).second;
+    playerLeft.showFrameAt(_coordBuffers.at(0).at(3 * counter).second);
+    // playerRight.showFrameAt(_coordBuffers.at(1).at(3 * counter).second);
 }

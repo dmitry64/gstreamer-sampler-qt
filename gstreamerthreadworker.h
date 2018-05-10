@@ -44,14 +44,13 @@ public:
 
 private:
     std::mutex _mutex;
-    std::queue<Command*> _commands;
+    std::queue<WorkerCommand*> _commands;
 
     WaveAnalyzerThread _waveThread;
     CameraType _cameraType;
 
     void run();
     void mainLoop();
-
 
 public:
     void handleCommands(ProgramData* data);

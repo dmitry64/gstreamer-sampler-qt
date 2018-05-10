@@ -3,6 +3,7 @@
 #include <QBuffer>
 #include <QPainter>
 #include <iostream>
+#include <QDebug>
 
 VideoWidget::VideoWidget(QWidget* parent)
     : QWidget(parent)
@@ -13,6 +14,7 @@ VideoWidget::~VideoWidget() {}
 
 void VideoWidget::drawFrame(const std::vector<unsigned char>& frame)
 {
+    qDebug() << "NEW FRAME!";
     frameList.push_back(frame);
 }
 

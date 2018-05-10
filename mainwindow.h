@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "gstreamerthreadworker.h"
+#include "gstreamervideoplayer.hpp"
 
 namespace Ui
 {
@@ -22,6 +23,8 @@ private:
 private slots:
     void on_audioPauseButton_released();
 
+    void on_seekButton_released();
+
 public slots:
     void onSampleLeft(std::vector<signed short> samples);
     void onSampleRight(std::vector<signed short> samples);
@@ -36,6 +39,8 @@ private:
     Ui::MainWindow* ui;
     GstreamerThreadWorker workerLeft;
     GstreamerThreadWorker workerRight;
+    GstreamerVideoPlayer playerLeft;
+    GstreamerVideoPlayer playerRight;
     std::array<std::vector<std::pair<unsigned int, GstClockTime>>, 2> _coordBuffers;
 };
 

@@ -1,34 +1,60 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
+#include <gst/gst.h>
 
 class ProgramData;
+class PlayerProgramData;
 
-class Command
+class WorkerCommand
 {
 public:
-    Command(){};
-    virtual ~Command(){};
+    WorkerCommand() {}
+    virtual ~WorkerCommand() {}
     virtual void handleCommand(ProgramData* data) = 0;
 };
 
-class SeekCommand : public Command
-{
-    long int _pos;
 
+class PlayerCommand
+{
 public:
-    SeekCommand(long int pos)
-        : _pos(pos)
-    {
-    }
+    PlayerCommand(){};
+    virtual ~PlayerCommand() {}
+    virtual void handleCommand(PlayerProgramData* data) = 0;
+};
+
+
+class WorkerStopCommand : public WorkerCommand
+{
+public:
+    WorkerStopCommand() {}
     void handleCommand(ProgramData* data);
 };
 
-class StopCommand : public Command
+class PlayerSeekCommand : public PlayerCommand
+{
+    GstClockTime _pos;
+
+public:
+    PlayerSeekCommand(GstClockTime pos)
+        : _pos(pos)
+    {
+    }
+    void handleCommand(PlayerProgramData* data);
+};
+
+class PlayerStopCommand : public PlayerCommand
 {
 public:
-    StopCommand() {}
-    void handleCommand(ProgramData* data);
+    PlayerStopCommand() {}
+    void handleCommand(PlayerProgramData* data);
+};
+
+class PlayerPlayCommand : public PlayerCommand
+{
+public:
+    PlayerPlayCommand() {}
+    void handleCommand(PlayerProgramData* data);
 };
 
 #endif  // COMMANDS_H
