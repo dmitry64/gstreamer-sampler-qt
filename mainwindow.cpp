@@ -26,13 +26,13 @@ MainWindow::MainWindow(QWidget* parent)
     workerLeft.start();
     workerRight.start();
 
-    QObject::connect(&playerRight, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameRight);
-    QObject::connect(&playerLeft, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameLeft);
+    switchMode(1);
+
 
     playerLeft.setCameraType(GstreamerVideoPlayer::CameraType::eCameraLeft);
     playerRight.setCameraType(GstreamerVideoPlayer::CameraType::eCameraRight);
 
-    QThread::currentThread()->sleep(1);
+    // QThread::currentThread()->sleep(1);
     playerLeft.start();
     playerRight.start();
 }
@@ -68,6 +68,28 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
 
     event->accept();
+}
+
+void MainWindow::switchMode(int mode)
+{
+    switch (mode) {
+    case 0: {
+        QObject::disconnect(&playerRight, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameRight);
+        QObject::disconnect(&playerLeft, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameLeft);
+
+        QObject::connect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
+        QObject::connect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
+        ui->modeSwitchButton->setText("Mode: Realtime");
+    } break;
+    case 1: {
+        QObject::connect(&playerRight, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameRight);
+        QObject::connect(&playerLeft, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameLeft);
+
+        QObject::disconnect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
+        QObject::disconnect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
+        ui->modeSwitchButton->setText("Mode: View");
+    } break;
+    }
 }
 
 
@@ -130,5 +152,18 @@ void MainWindow::on_seekButton_released()
     counter++;
     qDebug() << "SEEK:" << _coordBuffers.at(0).at(3 * counter).second;
     playerLeft.showFrameAt(_coordBuffers.at(0).at(3 * counter).second);
-    // playerRight.showFrameAt(_coordBuffers.at(1).at(3 * counter).second);
+    playerRight.showFrameAt(_coordBuffers.at(1).at(3 * counter).second);
+    onNumberDecodedLeft(_coordBuffers.at(0).at(3 * counter).first);
+}
+
+void MainWindow::on_modeSwitchButton_released()
+{
+    static int mode = 1;
+    if (mode == 0) {
+        mode = 1;
+    }
+    else {
+        mode = 0;
+    }
+    switchMode(mode);
 }

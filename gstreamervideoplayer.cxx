@@ -43,7 +43,7 @@ GstFlowReturn on_new_video_sample_from_sink_player(GstElement* elt, PlayerProgra
 
     // gst_element_set_state(data->source, GST_STATE_READY);
 
-    return GST_FLOW_OK;
+    return GST_FLOW_EOS;
 }
 
 static gboolean on_source_message_player(GstBus* bus, GstMessage* message, PlayerProgramData* data)
@@ -52,7 +52,8 @@ static gboolean on_source_message_player(GstBus* bus, GstMessage* message, Playe
 
     switch (GST_MESSAGE_TYPE(message)) {
     case GST_MESSAGE_EOS:
-        g_print("The source got dry\n");
+        std::cout << "The source got dry" << std::endl;
+        // gst_element_set_state(data->source, GST_STATE_PAUSED);
 
         break;
     case GST_MESSAGE_ERROR:
@@ -138,8 +139,8 @@ void GstreamerVideoPlayer::mainLoop()
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
         //("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=1920,height=1080 ! appsink name=myvideosink sync=true");
-        ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux !  h264parse ! avdec_h264 ! videoconvert ! videoscale ! "
-         "video/x-raw,format=RGB,width=1920,height=1080 ! appsink name=myvideosink sync=true",
+        ("filesrc location=file%d.ts use-mmap=false ! tsdemux ! h264parse ! decodebin ! videoconvert ! videoscale ! "
+         "video/x-raw,format=RGB,width=1920,height=1080 ! appsink name=myvideosink sync=true",  // filesrc location=file%d.ts use-mmap=false ! tsdemux
          id);
     std::cout << "Pipeline string: \n" << string << std::endl;  // filesrc location=file%d.ts ! tsparse ! tsdemux
     data->source = gst_parse_launch(string, NULL);

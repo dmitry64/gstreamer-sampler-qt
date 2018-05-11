@@ -20,10 +20,13 @@ public:
 
 private:
     void closeEvent(QCloseEvent* event);
+    void switchMode(int mode);
 private slots:
     void on_audioPauseButton_released();
 
     void on_seekButton_released();
+
+    void on_modeSwitchButton_released();
 
 public slots:
     void onSampleLeft(std::vector<signed short> samples);

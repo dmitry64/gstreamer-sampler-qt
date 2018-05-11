@@ -56,9 +56,9 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_3">
              <item>
-              <widget class="QPushButton" name="pushButton">
+              <widget class="QPushButton" name="modeSwitchButton">
                <property name="text">
-                <string>PushButton</string>
+                <string>Mode: Realtime</string>
                </property>
               </widget>
              </item>
@@ -182,7 +182,7 @@
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="">
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
         <property name="rightMargin">
          <number>0</number>
         </property>

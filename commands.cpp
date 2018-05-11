@@ -6,19 +6,26 @@ void PlayerSeekCommand::handleCommand(PlayerProgramData* data)
 {
     GstEvent* seek_event;
     gboolean res = FALSE;
+
     std::cout << "POS:" << _pos / 1000.0f / 1000.0f / 1000.0f << "s" << std::endl;
+
+    gint64 len;
+    gst_element_query_duration(data->source, GST_FORMAT_TIME, &len);
+    std::cout << "DURATION:" << len << std::endl;
+
     gst_element_set_state(data->source, GST_STATE_PLAYING);
     // gst_element_set_state(data->source, GST_STATE_PAUSED);
     std::cout << "SEEK" << std::endl;
-    seek_event = gst_event_new_seek(1.0, GST_FORMAT_TIME, static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT), GST_SEEK_TYPE_SET, 0, GST_SEEK_TYPE_SET, 1);
+    // seek_event = gst_event_new_seek(1.0, GST_FORMAT_TIME, static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE), GST_SEEK_TYPE_SET, _pos - 1000 * 1000, GST_SEEK_TYPE_SET, _pos);
     std::cout << "SEND" << std::endl;
-    res = gst_element_send_event(data->source, seek_event);
+    // res = gst_element_send_event(data->source, seek_event);
     // gst_element_set_state(data->source, GST_STATE_PLAYING);
-    // gst_element_seek(data->source, 1.0, GST_FORMAT_TIME, static_cast<GstSeekFlags>(GST_SEEK_FLAG_KEY_UNIT), GST_SEEK_TYPE_SET, 0, GST_SEEK_TYPE_SET, _pos);
+    gst_element_seek(data->source, 1.0, GST_FORMAT_TIME, static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE), GST_SEEK_TYPE_SET, _pos, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
 
-    if (!res) {
-        std::cout << "seek failed" << std::endl;
-    }
+
+    // if (!res) {
+    //     std::cout << "seek failed" << std::endl;
+    // }
     std::cout << " EVENT SENT!" << std::endl;
     gst_element_get_state(data->source, NULL, NULL, GST_CLOCK_TIME_NONE);
 }
