@@ -23,33 +23,21 @@ GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, ProgramData* data)
 {
     GstSample* sample;
     GstBuffer *app_buffer, *buffer;
-    // GstElement* source;
     GstMapInfo info;
-    GstFlowReturn ret;
 
     sample = gst_app_sink_pull_sample(GST_APP_SINK(elt));
     buffer = gst_sample_get_buffer(sample);
     gst_buffer_map(buffer, &info, GST_MAP_READ);
-    // std::cout << "InfoSize:" << info.size << std::endl;
-
     std::vector<signed short> outputVector(info.size / 2);
     memcpy(outputVector.data(), info.data, info.size);
 
     data->worker->addSampleAndTimestamp(outputVector, buffer->pts, buffer->duration);
     data->worker->sendSignalBuffers();
 
-
     data->worker->sendAudioSample(outputVector);
-    // std::cout << "Duration:" << buffer->duration / 1000.0f / 1000.0f << "ms" << std::endl;
-
     app_buffer = gst_buffer_copy(buffer);
 
     gst_sample_unref(sample);
-
-    // source = gst_bin_get_by_name(GST_BIN(data->audiosink), "outputaudiosource");
-    // ret = gst_app_src_push_buffer(GST_APP_SRC(source), app_buffer);
-    //  gst_object_unref(source);
-
     return GST_FLOW_OK;
 }
 
@@ -63,23 +51,12 @@ GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, ProgramData* data)
     buffer = gst_sample_get_buffer(sample);
     gst_buffer_map(buffer, &info, GST_MAP_READ);
 
-
     std::vector<unsigned char> outputVector(info.size);
     memcpy(outputVector.data(), info.data, info.size);
     data->worker->sendVideoSample(outputVector);
 
-    float second = (buffer->pts / 1000.0f / 1000.0f / 1000.0f);
-    /* std::cout << "Frame size:" << info.size << " bytes, " << info.size / 1024 << " KB, " << info.size / 1024 / 1024 << " MB"
-               << " PTS:" << std::setprecision(3) << second << "s" << std::endl;*/
-
-    /*if (second > 1.0f) {
-        g_main_loop_quit(data->loop);
-    }*/
-
     gst_buffer_unmap(buffer, &info);
-
     gst_sample_unref(sample);
-
 
     return GST_FLOW_OK;
 }
@@ -129,7 +106,6 @@ static gboolean gst_my_filter_sink_event_worker(GstPad* pad, GstObject* parent, 
 
     switch (GST_EVENT_TYPE(event)) {
     default:
-        /* just call the default handler */
         ret = gst_pad_event_default(pad, parent, event);
         break;
     }
@@ -151,9 +127,7 @@ void GstreamerThreadWorker::handleCommands(ProgramData* data)
     _mutex.lock();
     for (int i = 0; i < 50 && !_commands.empty(); ++i) {
         WorkerCommand* command = _commands.front();
-
         command->handleCommand(data);
-
         delete command;
         _commands.pop();
     }
@@ -200,7 +174,6 @@ void GstreamerThreadWorker::mainLoop()
     GstBus* bus = NULL;
     GstElement* myaudiosink = NULL;
     GstElement* myvideosink = NULL;
-    // GstElement* outputaudiosource = NULL;
 
     std::cout << "Initializing..." << std::endl;
     gst_init(0, 0);
@@ -262,10 +235,6 @@ void GstreamerThreadWorker::mainLoop()
         g_print("Bad sink\n");
         return;
     }
-
-    // outputaudiosource = gst_bin_get_by_name(GST_BIN(data->audiosink), "outputaudiosource");
-    // g_object_set(outputaudiosource, "format", GST_FORMAT_TIME, NULL);
-    // gst_object_unref(outputaudiosource);
 
     bus = gst_element_get_bus(data->audiosink);
     gst_bus_add_watch(bus, (GstBusFunc) on_audio_sink_message, data);

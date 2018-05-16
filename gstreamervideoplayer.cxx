@@ -34,7 +34,7 @@ GstFlowReturn on_new_video_sample_from_sink_player(GstElement* elt, PlayerProgra
     memcpy(outputVector.data(), info.data, info.size);
     data->worker->sendVideoSample(outputVector);
 
-    float second = (buffer->pts / 1000.0f / 1000.0f / 1000.0f);
+    // float second = (buffer->pts / 1000.0f / 1000.0f / 1000.0f);
 
 
     gst_buffer_unmap(buffer, &info);

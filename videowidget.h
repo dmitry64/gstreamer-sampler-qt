@@ -17,7 +17,8 @@ class VideoWidget : public QWidget
 public:
     explicit VideoWidget(QWidget* parent = 0);
     ~VideoWidget();
-    void drawFrame(const std::vector<unsigned char> &frame);
+    void drawFrame(const std::vector<unsigned char>& frame);
+    void cleanAll();
 
 protected:
     void paintEvent(QPaintEvent* event);
