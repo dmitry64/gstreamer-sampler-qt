@@ -92,6 +92,24 @@ void MainWindow::switchMode(int mode)
     }
 }
 
+GstClockTime MainWindow::getTimeAtCoord(unsigned int coord, int arrayIndex)
+{
+    CoordVector& currentVector = _coordBuffers.at(arrayIndex);
+    CoordVector::iterator it = currentVector.begin();
+    it = std::lower_bound(currentVector.begin(), currentVector.end(), CoordPair(coord, 0));
+    if (it != currentVector.end()) {
+        return it.operator*().time();
+    }
+    return 0;
+}
+
+void MainWindow::setFrameAtCoord(unsigned int coord)
+{
+    GstClockTime leftTime = getTimeAtCoord(coord, 0);
+    GstClockTime rightTime = getTimeAtCoord(coord, 1);
+    playerLeft.showFrameAt(leftTime);
+    playerRight.showFrameAt(rightTime);
+}
 
 void MainWindow::onSampleLeft(std::vector<signed short> samples)
 {
@@ -138,6 +156,14 @@ void MainWindow::onNewCoord(unsigned int coord, GstClockTime time, int cameraInd
 {
     _coordBuffers.at(cameraIndex).emplace_back(coord, time);
     qDebug() << "ARRAYS:" << _coordBuffers.at(0).size() << _coordBuffers.at(1).size();
+
+    if (!_coordBuffers.at(0).empty() && !_coordBuffers.at(1).empty()) {
+        unsigned int maxCoord = std::max(_coordBuffers.at(0).back().coord(), _coordBuffers.at(1).back().coord());
+        ui->coordSlider->setMaximum(maxCoord);
+    }
+    else {
+        ui->coordSlider->setMinimum(coord);
+    }
 }
 
 void MainWindow::on_audioPauseButton_released()
@@ -150,10 +176,10 @@ void MainWindow::on_seekButton_released()
 {
     static int counter = 0;
     counter++;
-    qDebug() << "SEEK:" << _coordBuffers.at(0).at(3 * counter).second;
-    playerLeft.showFrameAt(_coordBuffers.at(0).at(3 * counter).second);
-    playerRight.showFrameAt(_coordBuffers.at(1).at(3 * counter).second);
-    onNumberDecodedLeft(_coordBuffers.at(0).at(3 * counter).first);
+    qDebug() << "SEEK:" << _coordBuffers.at(0).at(3 * counter).time();
+    playerLeft.showFrameAt(_coordBuffers.at(0).at(3 * counter).time());
+    playerRight.showFrameAt(_coordBuffers.at(1).at(3 * counter).time());
+    onNumberDecodedLeft(_coordBuffers.at(0).at(3 * counter).coord());
 }
 
 void MainWindow::on_modeSwitchButton_released()
@@ -166,4 +192,21 @@ void MainWindow::on_modeSwitchButton_released()
         mode = 0;
     }
     switchMode(mode);
+}
+
+unsigned int CoordPair::coord() const
+{
+    return _coord;
+}
+
+GstClockTime CoordPair::time() const
+{
+    return _time;
+}
+
+void MainWindow::on_coordSlider_sliderMoved(int position)
+{
+    // GstClockTime time = getTimeAtCoord(position, 0);
+    // std::cout << "TIME at:" << position << " : " << time << std::endl;
+    setFrameAtCoord(position);
 }

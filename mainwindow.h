@@ -10,9 +10,32 @@ namespace Ui
 class MainWindow;
 }
 
+class CoordPair
+{
+    unsigned int _coord;
+    GstClockTime _time;
+
+public:
+    CoordPair(unsigned int coord, GstClockTime time)
+        : _coord(coord)
+        , _time(time)
+    {
+    }
+
+    GstClockTime time() const;
+    unsigned int coord() const;
+    bool operator<(const CoordPair& p1) const
+    {
+        return this->coord() < p1.coord();
+    }
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+private:
+    // using CoordPair = std::pair<unsigned int, GstClockTime>;
+    using CoordVector = std::vector<CoordPair>;
 
 public:
     explicit MainWindow(QWidget* parent = 0);
@@ -21,12 +44,14 @@ public:
 private:
     void closeEvent(QCloseEvent* event);
     void switchMode(int mode);
+    GstClockTime getTimeAtCoord(unsigned int coord, int arrayIndex);
+    void setFrameAtCoord(unsigned int coord);
 private slots:
     void on_audioPauseButton_released();
-
     void on_seekButton_released();
-
     void on_modeSwitchButton_released();
+
+    void on_coordSlider_sliderMoved(int position);
 
 public slots:
     void onSampleLeft(std::vector<signed short> samples);
@@ -44,7 +69,7 @@ private:
     GstreamerThreadWorker workerRight;
     GstreamerVideoPlayer playerLeft;
     GstreamerVideoPlayer playerRight;
-    std::array<std::vector<std::pair<unsigned int, GstClockTime>>, 2> _coordBuffers;
+    std::array<CoordVector, 2> _coordBuffers;
 };
 
 #endif  // MAINWINDOW_H
