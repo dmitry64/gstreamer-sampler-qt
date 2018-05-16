@@ -139,7 +139,7 @@ void GstreamerVideoPlayer::mainLoop()
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
         //("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=1920,height=1080 ! appsink name=myvideosink sync=true");
-        ("filesrc location=file%d.ts use-mmap=false ! tsdemux ! h264parse ! decodebin ! videoconvert ! videoscale ! "
+        ("filesrc location=file%d.ts use-mmap=false ! tsdemux ! queue ! h264parse ! decodebin ! videoconvert ! videoscale ! "
          "video/x-raw,format=RGB,width=1920,height=1080 ! appsink name=myvideosink sync=true",  // filesrc location=file%d.ts use-mmap=false ! tsdemux
          id);
     std::cout << "Pipeline string: \n" << string << std::endl;  // filesrc location=file%d.ts ! tsparse ! tsdemux
