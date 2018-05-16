@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "gstreamerthreadworker.h"
 #include "gstreamervideoplayer.hpp"
+#include "controlserver.hpp"
 
 namespace Ui
 {
@@ -70,6 +71,7 @@ private:
     GstreamerVideoPlayer playerLeft;
     GstreamerVideoPlayer playerRight;
     std::array<CoordVector, 2> _coordBuffers;
+    ControlServer _server;
 };
 
 #endif  // MAINWINDOW_H
