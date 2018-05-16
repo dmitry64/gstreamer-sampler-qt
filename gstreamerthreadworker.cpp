@@ -125,7 +125,7 @@ void GstreamerThreadWorker::run()
 void GstreamerThreadWorker::handleCommands(ProgramData* data)
 {
     _mutex.lock();
-    for (int i = 0; i < 50 && !_commands.empty(); ++i) {
+    for (int i = 0; i < 10 && !_commands.empty(); ++i) {
         WorkerCommand* command = _commands.front();
         command->handleCommand(data);
         delete command;
@@ -182,13 +182,14 @@ void GstreamerThreadWorker::mainLoop()
     data->worker = this;
 
     data->loop = g_main_loop_new(NULL, FALSE);
-    g_timeout_add(100, timeout_callback, data);
+    g_timeout_add(30, timeout_callback, data);
 
     int id = static_cast<int>(_cameraType);
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
         // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink sync=true");
-        ("rtspsrc location=rtsp://192.168.1.100/H.264/media.smp sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! tee name=t ! queue ! mpegtsmux ! filesink location=file%d.ts t. ! decodebin ! videoconvert ! videoscale ! "
+        ("rtspsrc location=rtsp://192.168.1.100/H.264/media.smp sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! tee name=t ! queue ! mpegtsmux ! filesink location=file%d.ts buffer-mode=1 t. ! decodebin ! videoconvert ! videoscale "
+         "! "
          "video/x-raw,format=RGB,width=1920,height=1080 ! appsink "
          "name=myvideosink "
          "caps=\"video/x-raw,format=RGB,width=1920,height=1080\" sync=true demux. ! queue ! capsfilter caps=\"application/x-rtp,media=audio\" ! decodebin !"

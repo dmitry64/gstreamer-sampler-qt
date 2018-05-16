@@ -1,6 +1,7 @@
 #include "commands.h"
 #include "gstreamerthreadworker.h"
 #include "gstreamervideoplayer.hpp"
+#include <cassert>
 
 void PlayerSeekCommand::handleCommand(PlayerProgramData* data)
 {
@@ -12,6 +13,9 @@ void PlayerSeekCommand::handleCommand(PlayerProgramData* data)
     gint64 len;
     gst_element_query_duration(data->source, GST_FORMAT_TIME, &len);
     std::cout << "DURATION:" << len << std::endl;
+    if (len < _pos) {
+        return;
+    }
 
     gst_element_set_state(data->source, GST_STATE_PLAYING);
     // gst_element_set_state(data->source, GST_STATE_PAUSED);
@@ -22,6 +26,7 @@ void PlayerSeekCommand::handleCommand(PlayerProgramData* data)
     // gst_element_set_state(data->source, GST_STATE_PLAYING);
     if (!gst_element_seek(data->source, 1.0, GST_FORMAT_TIME, static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE), GST_SEEK_TYPE_SET, _pos, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
         std::cout << "seek failed" << std::endl;
+        assert(false);
     }
     std::cout << " EVENT SENT!" << std::endl;
     gst_element_get_state(data->source, NULL, NULL, GST_CLOCK_TIME_NONE);

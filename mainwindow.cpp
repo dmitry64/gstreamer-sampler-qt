@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget* parent)
     QObject::connect(&workerRight, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCutRight);
     QObject::connect(&workerRight, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNewCoord);
 
+    switchMode(1);
 
     workerLeft.setCameraType(GstreamerThreadWorker::CameraType::eCameraLeft);
     workerRight.setCameraType(GstreamerThreadWorker::CameraType::eCameraRight);
@@ -26,13 +27,9 @@ MainWindow::MainWindow(QWidget* parent)
     workerLeft.start();
     workerRight.start();
 
-    switchMode(1);
-
-
     playerLeft.setCameraType(GstreamerVideoPlayer::CameraType::eCameraLeft);
     playerRight.setCameraType(GstreamerVideoPlayer::CameraType::eCameraRight);
 
-    // QThread::currentThread()->sleep(1);
     playerLeft.start();
     playerRight.start();
 }
@@ -66,7 +63,6 @@ void MainWindow::closeEvent(QCloseEvent* event)
         qApp->processEvents();
     }
 
-
     event->accept();
 }
 
@@ -80,14 +76,17 @@ void MainWindow::switchMode(int mode)
         QObject::connect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
         QObject::connect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
         ui->modeSwitchButton->setText("Mode: Realtime");
+        ui->coordSlider->setEnabled(false);
     } break;
     case 1: {
+        QObject::disconnect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
+        QObject::disconnect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
+
         QObject::connect(&playerRight, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameRight);
         QObject::connect(&playerLeft, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameLeft);
 
-        QObject::disconnect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
-        QObject::disconnect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
         ui->modeSwitchButton->setText("Mode: View");
+        ui->coordSlider->setEnabled(true);
     } break;
     }
 }
