@@ -34,14 +34,16 @@ void PlayerSeekCommand::handleCommand(PlayerProgramData* data)
 
 void WorkerStopCommand::handleCommand(ProgramData* data)
 {
-    std::cout << "Stop pipeline..." << std::endl;
+    std::cout << "Stop worker pipeline..." << std::endl;
     g_main_loop_quit(data->loop);
+    data->worker->stopHandlerTimeout();
 }
 
 void PlayerStopCommand::handleCommand(PlayerProgramData* data)
 {
-    std::cout << "Stop pipeline..." << std::endl;
+    std::cout << "Stop player pipeline..." << std::endl;
     g_main_loop_quit(data->loop);
+    data->worker->stopHandlerTimeout();
 }
 
 void PlayerPlayCommand::handleCommand(PlayerProgramData* data)

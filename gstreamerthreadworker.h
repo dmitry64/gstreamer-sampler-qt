@@ -48,6 +48,7 @@ private:
 
     WaveAnalyzerThread _waveThread;
     CameraType _cameraType;
+    guint _timeoutId;
 
     void run();
     void mainLoop();
@@ -64,6 +65,7 @@ public:
     void sendAudioSample(std::vector<signed short>& samples);
     void sendVideoSample(std::vector<unsigned char>& frame);
     void setCameraType(const CameraType& cameraType);
+    void stopHandlerTimeout();
 
 signals:
     void sampleReady(std::vector<signed short> samples);

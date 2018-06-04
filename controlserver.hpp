@@ -22,6 +22,12 @@ public slots:
     void slotNewConnection();
     void slotServerRead();
     void slotClientDisconnected();
+signals:
+    void doStartRegistration();
+    void doStopRegistration();
+    void doViewMode();
+    void doRealtimeMode();
+    void doSetCoord(unsigned int coord);
 
 
 private:

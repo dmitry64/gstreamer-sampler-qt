@@ -15,7 +15,9 @@ VideoWidget::~VideoWidget() {}
 void VideoWidget::drawFrame(const std::vector<unsigned char>& frame)
 {
     // qDebug() << "NEW FRAME!";
-    frameList.push_back(frame);
+    if (frameList.size() < 3) {
+        frameList.push_back(frame);
+    }
 }
 
 void VideoWidget::cleanAll()

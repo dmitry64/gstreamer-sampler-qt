@@ -47,12 +47,20 @@ private:
     void switchMode(int mode);
     GstClockTime getTimeAtCoord(unsigned int coord, int arrayIndex);
     void setFrameAtCoord(unsigned int coord);
+    void stopAllWorkers();
+    void startAllWorkers();
 private slots:
     void on_audioPauseButton_released();
     void on_seekButton_released();
     void on_modeSwitchButton_released();
 
     void on_coordSlider_sliderMoved(int position);
+    void onRegistrationStart();
+    void onRegistrationStop();
+    void onViewMode();
+    void onRealtimeMode();
+    void onSetCoord(unsigned int coord);
+
 
 public slots:
     void onSampleLeft(std::vector<signed short> samples);

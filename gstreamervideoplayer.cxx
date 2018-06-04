@@ -13,7 +13,9 @@ static void seek_to_time_player(GstElement* pipeline, gint64 time_nanoseconds)
 gboolean timeout_callback_player(gpointer dataptr)
 {
     PlayerProgramData* data = (PlayerProgramData*) dataptr;
-
+    Q_ASSERT(data->source);
+    Q_ASSERT(data->loop);
+    Q_ASSERT(data->worker);
     data->worker->handleCommands(data);
 
     return TRUE;
@@ -111,6 +113,7 @@ void GstreamerVideoPlayer::handleCommands(PlayerProgramData* data)
 
 GstreamerVideoPlayer::GstreamerVideoPlayer(QObject* parent)
     : QThread(parent)
+    , _timeoutId(0)
 {
 }
 
@@ -133,7 +136,7 @@ void GstreamerVideoPlayer::mainLoop()
     data->worker = this;
 
     data->loop = g_main_loop_new(NULL, FALSE);
-    g_timeout_add(100, timeout_callback_player, data);
+
 
     int id = static_cast<int>(_cameraType);
     string = g_strdup_printf
@@ -168,6 +171,7 @@ void GstreamerVideoPlayer::mainLoop()
 
     gst_element_set_state(data->source, GST_STATE_PAUSED);
 
+    _timeoutId = g_timeout_add(100, timeout_callback_player, data);
     std::cout << "Starting main loop..." << std::endl;
     g_main_loop_run(data->loop);
     std::cout << "Main loop finished..." << std::endl;
@@ -207,4 +211,12 @@ void GstreamerVideoPlayer::showFrameAt(GstClockTime time)
     _mutex.lock();
     _commands.push(command);
     _mutex.unlock();
+}
+
+void GstreamerVideoPlayer::stopHandlerTimeout()
+{
+    if (_timeoutId) {
+        g_source_remove(_timeoutId);
+        _timeoutId = 0;
+    }
 }

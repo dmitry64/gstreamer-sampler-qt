@@ -18,7 +18,6 @@ AudioSampleViewer::~AudioSampleViewer()
 
 void AudioSampleViewer::drawSample(const std::vector<signed short>& samples)
 {
-    // qDebug() << "Samples:" << samples.size();
     _currentSamples = samples;
     update();
 }
@@ -39,9 +38,8 @@ void AudioSampleViewer::paintEvent(QPaintEvent* event)
     float currentX = 0.0f;
     QPointF begin = QPointF(0, height / 2);
     for (const signed short sample : _currentSamples) {
-        // qDebug() << sample;
         float samplePos = static_cast<float>(height) - ((static_cast<float>(sample) + 32767.0f) / 65535.0f) * static_cast<float>(height);
-        QPointF end(currentX, samplePos);
+        QPointF end(static_cast<double>(currentX), samplePos);
         if (currentX != 0.0f) {
             painter.drawLine(begin, end);
         }

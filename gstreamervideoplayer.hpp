@@ -43,6 +43,7 @@ private:
     std::mutex _mutex;
     std::queue<PlayerCommand*> _commands;
     CameraType _cameraType;
+    guint _timeoutId;
 
     void run();
     void mainLoop();
@@ -52,6 +53,7 @@ public:
     void stopWorker();
     void playStream();
     void showFrameAt(GstClockTime time);
+    void stopHandlerTimeout();
 
 public:
     explicit GstreamerVideoPlayer(QObject* parent = nullptr);

@@ -58,26 +58,31 @@ void ControlServer::parseMessage()
 void ControlServer::onMessageStartReg()
 {
     std::cout << "MESSAGE START REG" << std::endl;
+    emit doStartRegistration();
 }
 
 void ControlServer::onMessageStopReg()
 {
     std::cout << "MESSAGE STOP REG" << std::endl;
+    emit doStopRegistration();
 }
 
 void ControlServer::onMessageViewMode()
 {
     std::cout << "MESSAGE VIEW" << std::endl;
+    emit doViewMode();
 }
 
 void ControlServer::onMessageRealtimeMode()
 {
     std::cout << "MESSAGE REALTIME" << std::endl;
+    emit doRealtimeMode();
 }
 
 void ControlServer::onMessageShowCoord(unsigned int coord)
 {
     std::cout << "MESSAGE COORD: " << coord << std::endl;
+    emit doSetCoord(coord);
 }
 
 void ControlServer::slotNewConnection()

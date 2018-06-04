@@ -19,19 +19,22 @@ MainWindow::MainWindow(QWidget* parent)
     QObject::connect(&workerRight, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCutRight);
     QObject::connect(&workerRight, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNewCoord);
 
-    switchMode(1);
+    QObject::connect(&_server, &ControlServer::doStartRegistration, this, &MainWindow::onRegistrationStart);
+    QObject::connect(&_server, &ControlServer::doStopRegistration, this, &MainWindow::onRegistrationStop);
+    QObject::connect(&_server, &ControlServer::doViewMode, this, &MainWindow::onViewMode);
+    QObject::connect(&_server, &ControlServer::doRealtimeMode, this, &MainWindow::onRealtimeMode);
+    QObject::connect(&_server, &ControlServer::doSetCoord, this, &MainWindow::onSetCoord);
+
+
+    switchMode(0);
 
     workerLeft.setCameraType(GstreamerThreadWorker::CameraType::eCameraLeft);
     workerRight.setCameraType(GstreamerThreadWorker::CameraType::eCameraRight);
 
-    workerLeft.start();
-    workerRight.start();
-
     playerLeft.setCameraType(GstreamerVideoPlayer::CameraType::eCameraLeft);
     playerRight.setCameraType(GstreamerVideoPlayer::CameraType::eCameraRight);
 
-    playerLeft.start();
-    playerRight.start();
+    startAllWorkers();
 }
 
 MainWindow::~MainWindow()
@@ -43,26 +46,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    workerLeft.stopWorker();
-    while (workerLeft.isRunning()) {
-        qApp->processEvents();
-    }
+    qDebug() << "Close event!";
 
-    workerRight.stopWorker();
-    while (workerRight.isRunning()) {
-        qApp->processEvents();
-    }
-
-    playerLeft.stopWorker();
-    while (playerLeft.isRunning()) {
-        qApp->processEvents();
-    }
-
-    playerRight.stopWorker();
-    while (playerRight.isRunning()) {
-        qApp->processEvents();
-    }
-
+    stopAllWorkers();
     event->accept();
 }
 
@@ -108,6 +94,42 @@ void MainWindow::setFrameAtCoord(unsigned int coord)
     GstClockTime rightTime = getTimeAtCoord(coord, 1);
     playerLeft.showFrameAt(leftTime);
     playerRight.showFrameAt(rightTime);
+}
+
+void MainWindow::stopAllWorkers()
+{
+    workerLeft.stopWorker();
+    while (workerLeft.isRunning()) {
+        qApp->processEvents();
+    }
+    qDebug() << "Left worker stopped";
+
+    workerRight.stopWorker();
+    while (workerRight.isRunning()) {
+        qApp->processEvents();
+    }
+    qDebug() << "Right worker stopped";
+
+    playerLeft.stopWorker();
+    while (playerLeft.isRunning()) {
+        qApp->processEvents();
+    }
+    qDebug() << "Left player stopped";
+
+    playerRight.stopWorker();
+    while (playerRight.isRunning()) {
+        qApp->processEvents();
+    }
+    qDebug() << "Right player stopped";
+}
+
+void MainWindow::startAllWorkers()
+{
+    qDebug() << "Starting all workers...";
+    workerLeft.start();
+    workerRight.start();
+    playerLeft.start();
+    playerRight.start();
 }
 
 void MainWindow::onSampleLeft(std::vector<signed short> samples)
@@ -209,3 +231,26 @@ void MainWindow::on_coordSlider_sliderMoved(int position)
     // std::cout << "TIME at:" << position << " : " << time << std::endl;
     setFrameAtCoord(position);
 }
+
+void MainWindow::onRegistrationStart()
+{
+    stopAllWorkers();
+    startAllWorkers();
+}
+
+void MainWindow::onRegistrationStop()
+{
+    stopAllWorkers();
+}
+
+void MainWindow::onViewMode()
+{
+    switchMode(1);
+}
+
+void MainWindow::onRealtimeMode()
+{
+    switchMode(0);
+}
+
+void MainWindow::onSetCoord(unsigned int coord) {}

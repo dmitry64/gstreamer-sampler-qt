@@ -117,6 +117,14 @@ void GstreamerThreadWorker::setCameraType(const CameraType& cameraType)
     _cameraType = cameraType;
 }
 
+void GstreamerThreadWorker::stopHandlerTimeout()
+{
+    if (_timeoutId) {
+        g_source_remove(_timeoutId);
+        _timeoutId = 0;
+    }
+}
+
 void GstreamerThreadWorker::run()
 {
     mainLoop();
@@ -154,6 +162,7 @@ void GstreamerThreadWorker::sendSignalBuffers()
 
 GstreamerThreadWorker::GstreamerThreadWorker(QObject* parent)
     : QThread(parent)
+    , _timeoutId(0)
 {
 }
 
@@ -182,7 +191,7 @@ void GstreamerThreadWorker::mainLoop()
     data->worker = this;
 
     data->loop = g_main_loop_new(NULL, FALSE);
-    g_timeout_add(30, timeout_callback, data);
+
 
     int id = static_cast<int>(_cameraType);
     string = g_strdup_printf
@@ -246,6 +255,7 @@ void GstreamerThreadWorker::mainLoop()
     gst_element_set_state(data->source, GST_STATE_PLAYING);
 
     _waveThread.startAnalysys();
+    _timeoutId = g_timeout_add(100, timeout_callback, data);
     std::cout << "Starting main loop..." << std::endl;
     g_main_loop_run(data->loop);
     std::cout << "Main loop finished..." << std::endl;
