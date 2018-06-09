@@ -27,7 +27,7 @@ class ProgramData
 public:
     GMainLoop* loop;
     GstElement* source;
-    GstElement* audiosink;
+    // GstElement* audiosink;
     GstreamerThreadWorker* worker;
 };
 

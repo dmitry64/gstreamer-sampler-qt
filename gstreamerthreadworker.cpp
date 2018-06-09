@@ -3,26 +3,17 @@
 #include <iomanip>
 #include <QApplication>
 
-static void seek_to_time(GstElement* pipeline, gint64 time_nanoseconds)
-{
-    if (!gst_element_seek(pipeline, 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET, time_nanoseconds, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
-        g_print("Seek failed!\n");
-    }
-}
-
-gboolean timeout_callback(gpointer dataptr)
+gboolean worker_timeout_callback(gpointer dataptr)
 {
     ProgramData* data = (ProgramData*) dataptr;
-
     data->worker->handleCommands(data);
-
     return TRUE;
 }
 
-GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, ProgramData* data)
+GstFlowReturn on_worker_new_audio_sample_from_sink(GstElement* elt, ProgramData* data)
 {
     GstSample* sample;
-    GstBuffer *app_buffer, *buffer;
+    GstBuffer* buffer;
     GstMapInfo info;
 
     sample = gst_app_sink_pull_sample(GST_APP_SINK(elt));
@@ -33,15 +24,13 @@ GstFlowReturn on_new_audio_sample_from_sink(GstElement* elt, ProgramData* data)
 
     data->worker->addSampleAndTimestamp(outputVector, buffer->pts, buffer->duration);
     data->worker->sendSignalBuffers();
-
     data->worker->sendAudioSample(outputVector);
-    app_buffer = gst_buffer_copy(buffer);
 
     gst_sample_unref(sample);
     return GST_FLOW_OK;
 }
 
-GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, ProgramData* data)
+GstFlowReturn on_worker_new_video_sample_from_sink(GstElement* elt, ProgramData* data)
 {
     GstSample* sample;
     GstBuffer* buffer;
@@ -61,16 +50,11 @@ GstFlowReturn on_new_video_sample_from_sink(GstElement* elt, ProgramData* data)
     return GST_FLOW_OK;
 }
 
-static gboolean on_source_message(GstBus* bus, GstMessage* message, ProgramData* data)
+static gboolean on_worker_source_message(GstBus* bus, GstMessage* message, ProgramData* data)
 {
-    GstElement* source;
-
     switch (GST_MESSAGE_TYPE(message)) {
     case GST_MESSAGE_EOS:
         g_print("The source got dry\n");
-        source = gst_bin_get_by_name(GST_BIN(data->audiosink), "outputaudiosource");
-        gst_app_src_end_of_stream(GST_APP_SRC(source));
-        gst_object_unref(source);
         break;
     case GST_MESSAGE_ERROR:
         g_print("Received error\n");
@@ -82,33 +66,16 @@ static gboolean on_source_message(GstBus* bus, GstMessage* message, ProgramData*
     return TRUE;
 }
 
-static gboolean on_audio_sink_message(GstBus* bus, GstMessage* message, ProgramData* data)
+static gboolean gst_worker_my_filter_sink_event_worker(GstPad* pad, GstObject* parent, GstEvent* event)
 {
-    switch (GST_MESSAGE_TYPE(message)) {
-    case GST_MESSAGE_EOS:
-        g_print("Finished playback\n");
-        g_main_loop_quit(data->loop);
-        break;
-    case GST_MESSAGE_ERROR:
-        g_print("Received error\n");
-        g_main_loop_quit(data->loop);
-        break;
-    default:
-        break;
-    }
-    return TRUE;
-}
-
-static gboolean gst_my_filter_sink_event_worker(GstPad* pad, GstObject* parent, GstEvent* event)
-{
-    gboolean ret;
     std::cout << "WORKER EVENT:" << GST_EVENT_TYPE_NAME(event) << std::endl;
 
     switch (GST_EVENT_TYPE(event)) {
-    default:
-        ret = gst_pad_event_default(pad, parent, event);
+    case GST_EVENT_EOS:
+        std::cerr << "WORKER EOS EVENT!" << std::endl;
         break;
     }
+    gboolean ret = gst_pad_event_default(pad, parent, event);
     return ret;
 }
 
@@ -182,9 +149,9 @@ void GstreamerThreadWorker::mainLoop()
     gchar* string = NULL;
     GstBus* bus = NULL;
     GstElement* myaudiosink = NULL;
-    GstElement* myvideosink = NULL;
+    GstElement* myworkervideosink = NULL;
 
-    std::cout << "Initializing..." << std::endl;
+    std::cout << "Initializing worker..." << std::endl;
     gst_init(0, 0);
 
     data = g_new0(ProgramData, 1);
@@ -196,21 +163,18 @@ void GstreamerThreadWorker::mainLoop()
     int id = static_cast<int>(_cameraType);
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
-        // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myvideosink sync=true");
-        ("rtspsrc location=rtsp://192.168.1.100/H.264/media.smp sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! tee name=t ! queue ! mpegtsmux ! filesink location=file%d.ts buffer-mode=line t. ! decodebin ! videoconvert ! "
-         "videoscale "
-         "! "
-         "video/x-raw,format=RGB,width=1920,height=1080 ! appsink "
-         "name=myvideosink "
-         "caps=\"video/x-raw,format=RGB,width=1920,height=1080\" sync=true demux. ! queue ! capsfilter caps=\"application/x-rtp,media=audio\" ! decodebin !"
+        // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myworkervideosink sync=true");
+        ("rtspsrc location=rtsp://192.168.1.100/H.264/media.smp sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! tee name=t ! capsfilter caps=\"video/x-h264\" ! queue ! mpegtsmux ! filesink location=file%d.ts buffer-mode=full t. ! "
+         "decodebin ! videoconvert ! "
+         "videoscale ! video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myworkervideosink "
+         "caps=\"video/x-raw,format=RGB,width=1280,height=720\" sync=true demux. ! queue ! capsfilter caps=\"application/x-rtp,media=audio\" ! decodebin !"
          "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved ! appsink "
-         "caps=\"audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved\" "
-         "name=myaudiosink sync=true",
+         "caps=\"audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved\" name=myaudiosink sync=true",
          id);
     std::cout << "Pipeline string: \n" << string << std::endl;
     data->source = gst_parse_launch(string, NULL);
     g_free(string);
-    std::cout << "Created pipeline..." << std::endl;
+    std::cout << "Created worker pipeline..." << std::endl;
 
     if (data->source == NULL) {
         g_print("Bad source\n");
@@ -218,57 +182,41 @@ void GstreamerThreadWorker::mainLoop()
     }
 
     bus = gst_element_get_bus(data->source);
-    gst_bus_add_watch(bus, (GstBusFunc) on_source_message, data);
+    gst_bus_add_watch(bus, (GstBusFunc) on_worker_source_message, data);
     gst_object_unref(bus);
 
     myaudiosink = gst_bin_get_by_name(GST_BIN(data->source), "myaudiosink");
     g_object_set(G_OBJECT(myaudiosink), "emit-signals", TRUE, "sync", TRUE, NULL);
-    g_signal_connect(myaudiosink, "new-sample", G_CALLBACK(on_new_audio_sample_from_sink), data);
+    g_signal_connect(myaudiosink, "new-sample", G_CALLBACK(on_worker_new_audio_sample_from_sink), data);
     gst_object_unref(myaudiosink);
 
-    std::cout << "Audio sink ready..." << std::endl;
+    std::cout << "Worker audio sink ready..." << std::endl;
 
-    myvideosink = gst_bin_get_by_name(GST_BIN(data->source), "myvideosink");
-    g_object_set(G_OBJECT(myvideosink), "emit-signals", TRUE, "sync", TRUE, NULL);
-    g_signal_connect(myvideosink, "new-sample", G_CALLBACK(on_new_video_sample_from_sink), data);
-    gst_object_unref(myvideosink);
+    myworkervideosink = gst_bin_get_by_name(GST_BIN(data->source), "myworkervideosink");
+    g_object_set(G_OBJECT(myworkervideosink), "emit-signals", TRUE, "sync", TRUE, NULL);
+    g_signal_connect(myworkervideosink, "new-sample", G_CALLBACK(on_worker_new_video_sample_from_sink), data);
+    gst_object_unref(myworkervideosink);
 
-    std::cout << "Video sink ready..." << std::endl;
+    std::cout << "Worker video sink ready..." << std::endl;
 
-    GstPad* appsinkPad = gst_element_get_static_pad(GST_ELEMENT(myvideosink), "sink");
-    gst_pad_set_event_function(appsinkPad, gst_my_filter_sink_event_worker);
+    GstPad* appsinkPad = gst_element_get_static_pad(GST_ELEMENT(myworkervideosink), "sink");
+    gst_pad_set_event_function(appsinkPad, gst_worker_my_filter_sink_event_worker);
 
-    string = g_strdup_printf("appsrc name=outputaudiosource caps=\"audio/x-raw,format=S16LE,channels=1,rate=48000,layout=interleaved\" ! autoaudiosink sync=true");
-    data->audiosink = gst_parse_launch(string, NULL);
-    g_free(string);
-
-    if (data->audiosink == NULL) {
-        g_print("Bad sink\n");
-        return;
-    }
-
-    bus = gst_element_get_bus(data->audiosink);
-    gst_bus_add_watch(bus, (GstBusFunc) on_audio_sink_message, data);
-    gst_object_unref(bus);
-
-    gst_element_set_state(data->audiosink, GST_STATE_PLAYING);
     gst_element_set_state(data->source, GST_STATE_PLAYING);
 
     _waveThread.startAnalysys();
-    _timeoutId = g_timeout_add(100, timeout_callback, data);
-    std::cout << "Starting main loop..." << std::endl;
+    _timeoutId = g_timeout_add(50, worker_timeout_callback, data);
+    std::cout << "Starting worker main loop..." << std::endl;
     g_main_loop_run(data->loop);
-    std::cout << "Main loop finished..." << std::endl;
+    std::cout << "Worker Main loop finished..." << std::endl;
 
     gst_element_set_state(data->source, GST_STATE_NULL);
-    gst_element_set_state(data->audiosink, GST_STATE_NULL);
 
     gst_object_unref(data->source);
-    gst_object_unref(data->audiosink);
     g_main_loop_unref(data->loop);
     g_free(data);
 
-    std::cout << "GStreamer thread finished..." << std::endl;
+    std::cout << "Worker GStreamer thread finished..." << std::endl;
     emit finished();
 }
 

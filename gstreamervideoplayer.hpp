@@ -63,6 +63,7 @@ public:
 
 signals:
     void frameReady(std::vector<unsigned char> frame);
+    void statusChanged(bool status);
     void finished();
 };
 

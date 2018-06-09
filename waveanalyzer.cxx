@@ -77,7 +77,7 @@ void WaveAnalyzer::analyze()
 
                 GstClockTime bufferTime = timeItBegin.operator*();
                 if (decodeBuffer(buff, res)) {
-                    std::cout << "COORD:" << res << " bin:" << ((res >> 3) & 0x00000001) << ((res >> 2) & 0x00000001) << ((res >> 1) & 0x00000001) << (res & 0x00000001) << " ";
+                    // std::cout << "COORD:" << res << " bin:" << ((res >> 3) & 0x00000001) << ((res >> 2) & 0x00000001) << ((res >> 1) & 0x00000001) << (res & 0x00000001) << " ";
                     SyncPoint syncPoint;
                     syncPoint.coord = res;
                     syncPoint.time = bufferTime;
@@ -86,7 +86,7 @@ void WaveAnalyzer::analyze()
                 else {
                     std::cout << "FAIL! :" << buff.size() << " " << res << " " << bufferTime << std::endl;
                 }
-                std::cout << "TIME:" << bufferTime << std::endl;
+                // std::cout << "TIME:" << bufferTime << std::endl;
 
                 _outputBuffers.push(buff);
 

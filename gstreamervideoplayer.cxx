@@ -3,13 +3,6 @@
 #include <iomanip>
 #include <QApplication>
 
-static void seek_to_time_player(GstElement* pipeline, gint64 time_nanoseconds)
-{
-    if (!gst_element_seek(pipeline, 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET, time_nanoseconds, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
-        g_print("Seek failed!\n");
-    }
-}
-
 gboolean timeout_callback_player(gpointer dataptr)
 {
     PlayerProgramData* data = (PlayerProgramData*) dataptr;
@@ -31,32 +24,21 @@ GstFlowReturn on_new_video_sample_from_sink_player(GstElement* elt, PlayerProgra
     buffer = gst_sample_get_buffer(sample);
     gst_buffer_map(buffer, &info, GST_MAP_READ);
 
-
     std::vector<unsigned char> outputVector(info.size);
     memcpy(outputVector.data(), info.data, info.size);
     data->worker->sendVideoSample(outputVector);
-
-    // float second = (buffer->pts / 1000.0f / 1000.0f / 1000.0f);
-
-
     gst_buffer_unmap(buffer, &info);
-
     gst_sample_unref(sample);
+    std::cerr << "FRAME!" << std::endl;
 
-    // gst_element_set_state(data->source, GST_STATE_READY);
-
-    return GST_FLOW_EOS;
+    return GST_FLOW_FLUSHING;
 }
 
 static gboolean on_source_message_player(GstBus* bus, GstMessage* message, PlayerProgramData* data)
 {
-    GstElement* source;
-
     switch (GST_MESSAGE_TYPE(message)) {
     case GST_MESSAGE_EOS:
         std::cout << "The source got dry" << std::endl;
-        // gst_element_set_state(data->source, GST_STATE_PAUSED);
-
         break;
     case GST_MESSAGE_ERROR:
         g_print("Received error\n");
@@ -64,7 +46,6 @@ static gboolean on_source_message_player(GstBus* bus, GstMessage* message, Playe
         break;
     case GST_MESSAGE_STATE_CHANGED:
         g_print("State changed\n");
-
         break;
     default:
         break;
@@ -74,15 +55,29 @@ static gboolean on_source_message_player(GstBus* bus, GstMessage* message, Playe
 
 static gboolean gst_my_filter_sink_event_player(GstPad* pad, GstObject* parent, GstEvent* event)
 {
-    gboolean ret;
     std::cout << "PLAYER EVENT:" << GST_EVENT_TYPE_NAME(event) << std::endl;
 
     switch (GST_EVENT_TYPE(event)) {
+    case GST_EVENT_EOS:
+        std::cerr << "PLAYER EOS EVENT!" << std::endl;
+        break;
+    case GST_EVENT_SEEK:
+        std::cerr << "PLAYER SEEK EVENT!" << std::endl;
+        break;
+    case GST_EVENT_SEGMENT:
+        std::cerr << "PLAYER SEGMENT EVENT!" << std::endl;
+        break;
+    case GST_EVENT_FLUSH_START:
+        std::cerr << "PLAYER FLUSH BEGIN..." << std::endl;
+        break;
+    case GST_EVENT_FLUSH_STOP:
+        std::cerr << "PLAYER FLUSH END!" << std::endl;
+        break;
     default:
-        /* just call the default handler */
-        ret = gst_pad_event_default(pad, parent, event);
+
         break;
     }
+    gboolean ret = gst_pad_event_default(pad, parent, event);
     return ret;
 }
 
@@ -127,7 +122,7 @@ void GstreamerVideoPlayer::mainLoop()
     PlayerProgramData* data = NULL;
     gchar* string = NULL;
     GstBus* bus = NULL;
-    GstElement* myvideosink = NULL;
+    GstElement* myplayervideosink = NULL;
 
     std::cout << "Initializing..." << std::endl;
     gst_init(0, 0);
@@ -141,9 +136,9 @@ void GstreamerVideoPlayer::mainLoop()
     int id = static_cast<int>(_cameraType);
     string = g_strdup_printf
         // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
-        //("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=1920,height=1080 ! appsink name=myvideosink sync=true");
-        ("filesrc location=file%d.ts ! tsdemux ! queue ! h264parse ! decodebin ! videoconvert ! videoscale ! "
-         "video/x-raw,format=RGB,width=1920,height=1080 ! appsink name=myvideosink sync=true",  // filesrc location=file%d.ts use-mmap=false ! tsdemux
+        // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myvideosink sync=true");
+        ("filesrc location=file%d.ts ! tsdemux ! queue ! capsfilter caps=\"video/x-h264\" ! h264parse ! decodebin ! videoconvert ! videoscale ! "
+         "video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myplayervideosink sync=true",  // filesrc location=file%d.ts use-mmap=false ! tsdemux
          id);
     std::cout << "Pipeline string: \n" << string << std::endl;  // filesrc location=file%d.ts ! tsparse ! tsdemux
     data->source = gst_parse_launch(string, NULL);
@@ -159,19 +154,19 @@ void GstreamerVideoPlayer::mainLoop()
     gst_bus_add_watch(bus, (GstBusFunc) on_source_message_player, data);
     gst_object_unref(bus);
 
-    myvideosink = gst_bin_get_by_name(GST_BIN(data->source), "myvideosink");
-    g_object_set(G_OBJECT(myvideosink), "emit-signals", TRUE, "sync", TRUE, NULL);
-    g_signal_connect(myvideosink, "new-sample", G_CALLBACK(on_new_video_sample_from_sink_player), data);
-    gst_object_unref(myvideosink);
+    myplayervideosink = gst_bin_get_by_name(GST_BIN(data->source), "myplayervideosink");
+    g_object_set(G_OBJECT(myplayervideosink), "emit-signals", TRUE, "sync", TRUE, NULL);
+    g_signal_connect(myplayervideosink, "new-sample", G_CALLBACK(on_new_video_sample_from_sink_player), data);
+    gst_object_unref(myplayervideosink);
 
-    std::cout << "Video sink ready..." << std::endl;
+    std::cout << "Player video sink ready..." << std::endl;
 
-    GstPad* appsinkPad = gst_element_get_static_pad(GST_ELEMENT(myvideosink), "sink");
+    GstPad* appsinkPad = gst_element_get_static_pad(GST_ELEMENT(myplayervideosink), "sink");
     gst_pad_set_event_function(appsinkPad, gst_my_filter_sink_event_player);
 
     gst_element_set_state(data->source, GST_STATE_PAUSED);
 
-    _timeoutId = g_timeout_add(100, timeout_callback_player, data);
+    _timeoutId = g_timeout_add(50, timeout_callback_player, data);
     std::cout << "Starting main loop..." << std::endl;
     g_main_loop_run(data->loop);
     std::cout << "Main loop finished..." << std::endl;
@@ -206,7 +201,6 @@ void GstreamerVideoPlayer::playStream()
 
 void GstreamerVideoPlayer::showFrameAt(GstClockTime time)
 {
-    std::cout << "Show player at: " << time << std::endl;
     PlayerSeekCommand* command = new PlayerSeekCommand(time);
     _mutex.lock();
     _commands.push(command);

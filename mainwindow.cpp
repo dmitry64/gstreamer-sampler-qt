@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QDebug>
 #include <QCloseEvent>
+#include <unistd.h>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -26,8 +27,6 @@ MainWindow::MainWindow(QWidget* parent)
     QObject::connect(&_server, &ControlServer::doSetCoord, this, &MainWindow::onSetCoord);
 
 
-    switchMode(0);
-
     workerLeft.setCameraType(GstreamerThreadWorker::CameraType::eCameraLeft);
     workerRight.setCameraType(GstreamerThreadWorker::CameraType::eCameraRight);
 
@@ -35,6 +34,8 @@ MainWindow::MainWindow(QWidget* parent)
     playerRight.setCameraType(GstreamerVideoPlayer::CameraType::eCameraRight);
 
     startAllWorkers();
+
+    switchMode(1);
 }
 
 MainWindow::~MainWindow()
@@ -73,6 +74,7 @@ void MainWindow::switchMode(int mode)
 
         ui->modeSwitchButton->setText("Mode: View");
         ui->coordSlider->setEnabled(true);
+
     } break;
     }
 }
@@ -126,8 +128,23 @@ void MainWindow::stopAllWorkers()
 void MainWindow::startAllWorkers()
 {
     qDebug() << "Starting all workers...";
+    QFile file0("file0.ts");
+    if (file0.exists()) {
+        qDebug() << "FILE0 exists!";
+        file0.remove();
+    }
+
+    QFile file1("file1.ts");
+    if (file1.exists()) {
+        qDebug() << "FILE1 exists!";
+        file1.remove();
+    }
+
+    sync();
     workerLeft.start();
     workerRight.start();
+    QThread::msleep(1000);
+    sync();
     playerLeft.start();
     playerRight.start();
 }
@@ -176,7 +193,7 @@ void MainWindow::onNumberDecodedLeft(unsigned int number)
 void MainWindow::onNewCoord(unsigned int coord, GstClockTime time, int cameraIndex)
 {
     _coordBuffers.at(cameraIndex).emplace_back(coord, time);
-    qDebug() << "ARRAYS:" << _coordBuffers.at(0).size() << _coordBuffers.at(1).size();
+    // qDebug() << "ARRAYS:" << _coordBuffers.at(0).size() << _coordBuffers.at(1).size();
 
     if (!_coordBuffers.at(0).empty() && !_coordBuffers.at(1).empty()) {
         unsigned int maxCoord = std::max(_coordBuffers.at(0).back().coord(), _coordBuffers.at(1).back().coord());

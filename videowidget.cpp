@@ -23,7 +23,7 @@ void VideoWidget::drawFrame(const std::vector<unsigned char>& frame)
 void VideoWidget::cleanAll()
 {
     std::vector<unsigned char> data;
-    data.resize(1080 * 1920 * 3);
+    data.resize(1280 * 720 * 3);
     for (unsigned char& ptr : data) {
         ptr = rand() % 255;
     }
@@ -37,7 +37,7 @@ void VideoWidget::paintEvent(QPaintEvent* event)
     if (!frameList.empty()) {
         const auto& frame = frameList.front();
 
-        QImage image((const unsigned char*) frame.data(), 1920, 1080, QImage::Format_RGB888);
+        QImage image((const unsigned char*) frame.data(), 1280, 720, QImage::Format_RGB888);
         painter.drawImage(QRect(0, 0, width(), height()), image);
         while (frameList.size() != 1) {
             frameList.pop_front();
