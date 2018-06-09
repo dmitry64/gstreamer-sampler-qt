@@ -45,6 +45,7 @@ private:
     std::vector<GstClockTime> _timeBuffers;
     std::queue<SignalsBuffer> _outputBuffers;
     std::queue<SyncPoint> _syncPoints;
+    std::string _filename;
 
 private:
     bool decodeBuffer(const SignalsBuffer& buffer, unsigned int& result);
@@ -58,6 +59,9 @@ public:
     bool getNextCoord(unsigned int& coord, GstClockTime& time);
     bool getEnoughData();
     void dumpToFile();
+    void writeSyncPoint(SyncPoint point);
+    std::string getFilename() const;
+    void setFilename(const std::string& filename);
 };
 
 #endif  // WAVEANALYZER_HPP

@@ -150,7 +150,7 @@ void GstreamerVideoPlayer::mainLoop()
         cameraAddress = restoreRightCameraAddress();
     }
 
-    QString launchString("filesrc location=" + currentFilePath + "/" + _currentFileName + QString::number(id)
+    QString launchString("filesrc location=" + currentFilePath + "/" + _currentPath + _currentFileName + QString::number(id)
                          + ".ts ! tsdemux ! queue ! capsfilter caps=\"video/x-h264\" ! h264parse ! decodebin ! videoconvert ! videoscale ! "
                            "video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myplayervideosink sync=true");
 

@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QCloseEvent>
 #include <unistd.h>
+#include <QDir>
+#include "settings.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -11,12 +13,10 @@ MainWindow::MainWindow(QWidget* parent)
     ui->setupUi(this);
 
     QObject::connect(&workerLeft, &GstreamerThreadWorker::sampleReady, this, &MainWindow::onSampleLeft);
-    // QObject::connect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
     QObject::connect(&workerLeft, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCutLeft);
     QObject::connect(&workerLeft, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNewCoord);
 
     QObject::connect(&workerRight, &GstreamerThreadWorker::sampleReady, this, &MainWindow::onSampleRight);
-    // QObject::connect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
     QObject::connect(&workerRight, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCutRight);
     QObject::connect(&workerRight, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNewCoord);
 
@@ -25,7 +25,6 @@ MainWindow::MainWindow(QWidget* parent)
     QObject::connect(&_server, &ControlServer::doViewMode, this, &MainWindow::onViewMode);
     QObject::connect(&_server, &ControlServer::doRealtimeMode, this, &MainWindow::onRealtimeMode);
     QObject::connect(&_server, &ControlServer::doSetCoord, this, &MainWindow::onSetCoord);
-
 
     workerLeft.setCameraType(GstreamerThreadWorker::CameraType::eCameraLeft);
     workerRight.setCameraType(GstreamerThreadWorker::CameraType::eCameraRight);
@@ -182,8 +181,6 @@ void MainWindow::onNumberDecodedLeft(unsigned int number)
 void MainWindow::onNewCoord(unsigned int coord, GstClockTime time, int cameraIndex)
 {
     _coordBuffers.at(cameraIndex).emplace_back(coord, time);
-    // qDebug() << "ARRAYS:" << _coordBuffers.at(0).size() << _coordBuffers.at(1).size();
-
     if (!_coordBuffers.at(0).empty() && !_coordBuffers.at(1).empty()) {
         unsigned int maxCoord = std::max(_coordBuffers.at(0).back().coord(), _coordBuffers.at(1).back().coord());
         ui->coordSlider->setMaximum(maxCoord);
@@ -240,12 +237,25 @@ void MainWindow::onRegistrationStart(QString name)
 {
     _currentRegistrationName = name;
     stopAllWorkers();
+    QString path = restoreDefaultVideoFolder() + "/" + name;
+    QDir dir;
+    dir.mkpath(path);
+
+    workerLeft.setRegistrationFileName(name + "/", name);
+    workerRight.setRegistrationFileName(name + "/", name);
+    playerLeft.setRegistrationFileName(name + "/", name);
+    playerRight.setRegistrationFileName(name + "/", name);
+    _coordBuffers.at(0).clear();
+    _coordBuffers.at(1).clear();
+
     startAllWorkers();
 }
 
 void MainWindow::onRegistrationStop()
 {
     stopAllWorkers();
+    _coordBuffers.at(0).clear();
+    _coordBuffers.at(1).clear();
 }
 
 void MainWindow::onViewMode()
@@ -258,4 +268,17 @@ void MainWindow::onRealtimeMode()
     switchMode(0);
 }
 
-void MainWindow::onSetCoord(unsigned int coord) {}
+void MainWindow::onSetCoord(unsigned int coord)
+{
+    setFrameAtCoord(coord);
+}
+
+void MainWindow::on_startRegistrationButton_released()
+{
+    onRegistrationStart(ui->registrationNameLineEdit->text());
+}
+
+void MainWindow::on_stopRegistrationButton_released()
+{
+    onRegistrationStop();
+}

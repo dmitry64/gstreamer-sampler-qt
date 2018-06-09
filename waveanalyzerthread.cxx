@@ -21,10 +21,11 @@ WaveAnalyzerThread::~WaveAnalyzerThread()
     wait();
 }
 
-void WaveAnalyzerThread::startAnalysys()
+void WaveAnalyzerThread::startAnalysys(QString filePath)
 {
     std::cout << "Starting analyzer thread..." << std::endl;
     _isActive.store(true);
+    _analyzer.setFilename(filePath.toStdString());
     start();
     std::cout << "Analyzer thread started..." << std::endl;
 }

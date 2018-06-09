@@ -62,6 +62,10 @@ private slots:
     void onSetCoord(unsigned int coord);
 
 
+    void on_startRegistrationButton_released();
+
+    void on_stopRegistrationButton_released();
+
 public slots:
     void onSampleLeft(std::vector<signed short> samples);
     void onSampleRight(std::vector<signed short> samples);

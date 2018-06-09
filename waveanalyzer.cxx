@@ -4,6 +4,7 @@
 #include <cassert>
 #include <algorithm>
 #include <numeric>
+#include <fstream>
 
 void WaveAnalyzer::analyze()
 {
@@ -82,6 +83,9 @@ void WaveAnalyzer::analyze()
                     syncPoint.coord = res;
                     syncPoint.time = bufferTime;
                     _syncPoints.push(syncPoint);
+                    if (!_filename.empty()) {
+                        writeSyncPoint(syncPoint);
+                    }
                 }
                 else {
                     std::cout << "FAIL! :" << buff.size() << " " << res << " " << bufferTime << std::endl;
@@ -102,6 +106,16 @@ void WaveAnalyzer::analyze()
             return;
         }
     }
+}
+
+std::string WaveAnalyzer::getFilename() const
+{
+    return _filename;
+}
+
+void WaveAnalyzer::setFilename(const std::string& filename)
+{
+    _filename = filename;
 }
 
 bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsigned int& result)
@@ -308,6 +322,17 @@ void WaveAnalyzer::dumpToFile()
     if (_syncPoints.size() > 30) {
         while (!_syncPoints.empty()) {
             _syncPoints.pop();
+        }
+    }
+}
+
+void WaveAnalyzer::writeSyncPoint(WaveAnalyzer::SyncPoint point)
+{
+    if (!_filename.empty()) {
+        std::ofstream output(_filename + ".txt", std::ofstream::out | std::ofstream::app);
+        if (output.is_open()) {
+            output << point.time << " " << point.coord << "\n";
+            output.close();
         }
     }
 }

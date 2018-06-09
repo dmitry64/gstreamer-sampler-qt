@@ -23,7 +23,7 @@ protected:
 public:
     WaveAnalyzerThread(QObject* parent = nullptr);
     ~WaveAnalyzerThread();
-    void startAnalysys();
+    void startAnalysys(QString filePath);
     void addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration);
     bool getNextBuffer(std::vector<signed short>& output);
     bool getNextCoord(unsigned int& result, GstClockTime& time);

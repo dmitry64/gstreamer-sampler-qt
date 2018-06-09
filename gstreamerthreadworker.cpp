@@ -161,7 +161,6 @@ void GstreamerThreadWorker::mainLoop()
 
     data->loop = g_main_loop_new(NULL, FALSE);
 
-
     int id = static_cast<int>(_cameraType);
 
     QString cameraAddress;
@@ -173,9 +172,8 @@ void GstreamerThreadWorker::mainLoop()
     else {
         cameraAddress = restoreRightCameraAddress();
     }
-
-    QString launchString = "rtspsrc location=" + cameraAddress + " sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! tee name=t ! capsfilter caps=\"video/x-h264\" ! queue ! mpegtsmux ! filesink location=" + currentFilePath + "/"
-                           + _currentFileName + QString::number(id)
+    QString finalPath = currentFilePath + "/" + _currentPath + _currentFileName + QString::number(id);
+    QString launchString = "rtspsrc location=" + cameraAddress + " sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! tee name=t ! capsfilter caps=\"video/x-h264\" ! queue ! mpegtsmux ! filesink location=" + finalPath
                            + ".ts buffer-mode=full t. ! "
                              "decodebin ! videoconvert ! "
                              "videoscale ! video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myworkervideosink "
@@ -187,10 +185,10 @@ void GstreamerThreadWorker::mainLoop()
     // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
     // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myworkervideosink sync=true");
     //    ();
-    std::cout << "Pipeline string: \n" << string << std::endl;
+    std::cerr << "Pipeline string: \n" << string << std::endl;
     data->source = gst_parse_launch(launchString.toStdString().c_str(), NULL);
     g_free(string);
-    std::cout << "Created worker pipeline..." << std::endl;
+    std::cerr << "Created worker pipeline..." << std::endl;
 
     if (data->source == NULL) {
         g_print("Bad source\n");
@@ -220,7 +218,7 @@ void GstreamerThreadWorker::mainLoop()
 
     gst_element_set_state(data->source, GST_STATE_PLAYING);
 
-    _waveThread.startAnalysys();
+    _waveThread.startAnalysys(finalPath);
     _timeoutId = g_timeout_add(50, worker_timeout_callback, data);
     std::cout << "Starting worker main loop..." << std::endl;
     g_main_loop_run(data->loop);
