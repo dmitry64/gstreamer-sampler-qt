@@ -1,6 +1,25 @@
 #include "mainwindow.h"
 #include <QApplication>
 
+QString manufactureName()
+{
+    return QString("Radioavionica");
+}
+
+QString applicationName()
+{
+    return QString("VideoSystem");
+}
+
+void setApplicationSettingsProperties()
+{
+    QCoreApplication::setOrganizationName(manufactureName());
+    QCoreApplication::setOrganizationDomain("radioavionica.ru");
+    QCoreApplication::setApplicationName(applicationName());
+}
+
+Q_COREAPP_STARTUP_FUNCTION(setApplicationSettingsProperties)
+
 
 int main(int argc, char* argv[])
 {

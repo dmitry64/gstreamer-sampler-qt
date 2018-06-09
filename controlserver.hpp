@@ -23,7 +23,7 @@ public slots:
     void slotServerRead();
     void slotClientDisconnected();
 signals:
-    void doStartRegistration();
+    void doStartRegistration(QString name);
     void doStopRegistration();
     void doViewMode();
     void doRealtimeMode();

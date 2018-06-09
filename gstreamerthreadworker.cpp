@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <iomanip>
 #include <QApplication>
+#include "settings.h"
 
 gboolean worker_timeout_callback(gpointer dataptr)
 {
@@ -130,6 +131,7 @@ void GstreamerThreadWorker::sendSignalBuffers()
 GstreamerThreadWorker::GstreamerThreadWorker(QObject* parent)
     : QThread(parent)
     , _timeoutId(0)
+    , _currentFileName("video")
 {
 }
 
@@ -161,18 +163,32 @@ void GstreamerThreadWorker::mainLoop()
 
 
     int id = static_cast<int>(_cameraType);
-    string = g_strdup_printf
-        // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
-        // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myworkervideosink sync=true");
-        ("rtspsrc location=rtsp://192.168.1.100/H.264/media.smp sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! tee name=t ! capsfilter caps=\"video/x-h264\" ! queue ! mpegtsmux ! filesink location=file%d.ts buffer-mode=full t. ! "
-         "decodebin ! videoconvert ! "
-         "videoscale ! video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myworkervideosink "
-         "caps=\"video/x-raw,format=RGB,width=1280,height=720\" sync=true demux. ! queue ! capsfilter caps=\"application/x-rtp,media=audio\" ! decodebin !"
-         "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved ! appsink "
-         "caps=\"audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved\" name=myaudiosink sync=true",
-         id);
+
+    QString cameraAddress;
+    QString currentFilePath = restoreDefaultVideoFolder();
+    std::cout << "Current file path: " << currentFilePath.toStdString() << std::endl;
+    if (_cameraType == eCameraLeft) {
+        cameraAddress = restoreLeftCameraAddress();
+    }
+    else {
+        cameraAddress = restoreRightCameraAddress();
+    }
+
+    QString launchString = "rtspsrc location=" + cameraAddress + " sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! tee name=t ! capsfilter caps=\"video/x-h264\" ! queue ! mpegtsmux ! filesink location=" + currentFilePath + "/"
+                           + _currentFileName + QString::number(id)
+                           + ".ts buffer-mode=full t. ! "
+                             "decodebin ! videoconvert ! "
+                             "videoscale ! video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myworkervideosink "
+                             "caps=\"video/x-raw,format=RGB,width=1280,height=720\" sync=true demux. ! queue ! capsfilter caps=\"application/x-rtp,media=audio\" ! decodebin !"
+                             "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved ! appsink "
+                             "caps=\"audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved\" name=myaudiosink sync=true";
+
+    // string = g_strdup_printf
+    // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
+    // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myworkervideosink sync=true");
+    //    ();
     std::cout << "Pipeline string: \n" << string << std::endl;
-    data->source = gst_parse_launch(string, NULL);
+    data->source = gst_parse_launch(launchString.toStdString().c_str(), NULL);
     g_free(string);
     std::cout << "Created worker pipeline..." << std::endl;
 
@@ -227,4 +243,10 @@ void GstreamerThreadWorker::stopWorker()
     _mutex.lock();
     _commands.push(command);
     _mutex.unlock();
+}
+
+void GstreamerThreadWorker::setRegistrationFileName(const QString& path, const QString& name)
+{
+    _currentPath = path;
+    _currentFileName = name;
 }

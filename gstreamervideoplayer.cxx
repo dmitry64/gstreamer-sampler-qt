@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <iomanip>
 #include <QApplication>
+#include "settings.h"
 
 gboolean timeout_callback_player(gpointer dataptr)
 {
@@ -86,6 +87,12 @@ void GstreamerVideoPlayer::setCameraType(const CameraType& cameraType)
     _cameraType = cameraType;
 }
 
+void GstreamerVideoPlayer::setRegistrationFileName(const QString& path, const QString& name)
+{
+    _currentPath = path;
+    _currentFileName = name;
+}
+
 void GstreamerVideoPlayer::run()
 {
     mainLoop();
@@ -109,6 +116,7 @@ void GstreamerVideoPlayer::handleCommands(PlayerProgramData* data)
 GstreamerVideoPlayer::GstreamerVideoPlayer(QObject* parent)
     : QThread(parent)
     , _timeoutId(0)
+    , _currentFileName("video")
 {
 }
 
@@ -131,17 +139,29 @@ void GstreamerVideoPlayer::mainLoop()
     data->worker = this;
 
     data->loop = g_main_loop_new(NULL, FALSE);
-
-
     int id = static_cast<int>(_cameraType);
-    string = g_strdup_printf
-        // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
-        // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myvideosink sync=true");
-        ("filesrc location=file%d.ts ! tsdemux ! queue ! capsfilter caps=\"video/x-h264\" ! h264parse ! decodebin ! videoconvert ! videoscale ! "
-         "video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myplayervideosink sync=true",  // filesrc location=file%d.ts use-mmap=false ! tsdemux
-         id);
-    std::cout << "Pipeline string: \n" << string << std::endl;  // filesrc location=file%d.ts ! tsparse ! tsdemux
-    data->source = gst_parse_launch(string, NULL);
+    QString cameraAddress;
+    QString currentFilePath = restoreDefaultVideoFolder();
+    std::cout << "Current file path: " << currentFilePath.toStdString() << std::endl;
+    if (_cameraType == eCameraLeft) {
+        cameraAddress = restoreLeftCameraAddress();
+    }
+    else {
+        cameraAddress = restoreRightCameraAddress();
+    }
+
+    QString launchString("filesrc location=" + currentFilePath + "/" + _currentFileName + QString::number(id)
+                         + ".ts ! tsdemux ! queue ! capsfilter caps=\"video/x-h264\" ! h264parse ! decodebin ! videoconvert ! videoscale ! "
+                           "video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myplayervideosink sync=true");
+
+
+    // string = g_strdup_printf
+    // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
+    // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myvideosink sync=true");
+    //(,  // filesrc location=file%d.ts use-mmap=false ! tsdemux
+    // id);
+    std::cout << "Pipeline string: \n" << launchString.toStdString().c_str() << std::endl;  // filesrc location=file%d.ts ! tsparse ! tsdemux
+    data->source = gst_parse_launch(launchString.toStdString().c_str(), NULL);
     g_free(string);
     std::cout << "Created pipeline..." << std::endl;
 

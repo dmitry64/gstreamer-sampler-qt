@@ -55,7 +55,7 @@ private slots:
     void on_modeSwitchButton_released();
 
     void on_coordSlider_sliderMoved(int position);
-    void onRegistrationStart();
+    void onRegistrationStart(QString name);
     void onRegistrationStop();
     void onViewMode();
     void onRealtimeMode();
@@ -80,6 +80,7 @@ private:
     GstreamerVideoPlayer playerRight;
     std::array<CoordVector, 2> _coordBuffers;
     ControlServer _server;
+    QString _currentRegistrationName;
 };
 
 #endif  // MAINWINDOW_H

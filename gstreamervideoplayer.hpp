@@ -44,6 +44,8 @@ private:
     std::queue<PlayerCommand*> _commands;
     CameraType _cameraType;
     guint _timeoutId;
+    QString _currentFileName;
+    QString _currentPath;
 
     void run();
     void mainLoop();
@@ -60,6 +62,7 @@ public:
 
     void sendVideoSample(std::vector<unsigned char>& frame);
     void setCameraType(const CameraType& cameraType);
+    void setRegistrationFileName(const QString& path, const QString& name);
 
 signals:
     void frameReady(std::vector<unsigned char> frame);

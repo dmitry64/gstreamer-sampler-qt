@@ -128,17 +128,6 @@ void MainWindow::stopAllWorkers()
 void MainWindow::startAllWorkers()
 {
     qDebug() << "Starting all workers...";
-    QFile file0("file0.ts");
-    if (file0.exists()) {
-        qDebug() << "FILE0 exists!";
-        file0.remove();
-    }
-
-    QFile file1("file1.ts");
-    if (file1.exists()) {
-        qDebug() << "FILE1 exists!";
-        file1.remove();
-    }
 
     sync();
     workerLeft.start();
@@ -244,13 +233,12 @@ GstClockTime CoordPair::time() const
 
 void MainWindow::on_coordSlider_sliderMoved(int position)
 {
-    // GstClockTime time = getTimeAtCoord(position, 0);
-    // std::cout << "TIME at:" << position << " : " << time << std::endl;
     setFrameAtCoord(position);
 }
 
-void MainWindow::onRegistrationStart()
+void MainWindow::onRegistrationStart(QString name)
 {
+    _currentRegistrationName = name;
     stopAllWorkers();
     startAllWorkers();
 }

@@ -58,7 +58,8 @@ void ControlServer::parseMessage()
 void ControlServer::onMessageStartReg()
 {
     std::cout << "MESSAGE START REG" << std::endl;
-    emit doStartRegistration();
+    QString name = "REG_FILENAME";
+    emit doStartRegistration(name);
 }
 
 void ControlServer::onMessageStopReg()

@@ -49,7 +49,8 @@ private:
     WaveAnalyzerThread _waveThread;
     CameraType _cameraType;
     guint _timeoutId;
-
+    QString _currentFileName;
+    QString _currentPath;
     void run();
     void mainLoop();
 
@@ -58,6 +59,7 @@ public:
     void addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration);
     void sendSignalBuffers();
     void stopWorker();
+    void setRegistrationFileName(const QString& path, const QString& name);
 
 public:
     explicit GstreamerThreadWorker(QObject* parent = nullptr);
