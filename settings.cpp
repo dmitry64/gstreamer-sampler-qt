@@ -5,13 +5,13 @@
 QString restoreLeftCameraAddress()
 {
     QSettings settings;
-    return settings.value("leftCameraAddress", "rtsp://192.168.1.100/H.264/media.smp").toString();
+    return settings.value("leftCameraAddress", "rtsp://172.168.100.8/H.264/media.smp").toString();
 }
 
 QString restoreRightCameraAddress()
 {
     QSettings settings;
-    return settings.value("rightCameraAddress", "rtsp://192.168.1.100/H.264/media.smp").toString();
+    return settings.value("rightCameraAddress", "rtsp://172.168.100.8/H.264/media.smp").toString();
 }
 
 QString restoreDefaultVideoFolder()

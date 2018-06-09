@@ -148,7 +148,6 @@ void GstreamerThreadWorker::sendVideoSample(std::vector<unsigned char>& frame)
 void GstreamerThreadWorker::mainLoop()
 {
     ProgramData* data = NULL;
-    gchar* string = NULL;
     GstBus* bus = NULL;
     GstElement* myaudiosink = NULL;
     GstElement* myworkervideosink = NULL;
@@ -185,9 +184,9 @@ void GstreamerThreadWorker::mainLoop()
     // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
     // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myworkervideosink sync=true");
     //    ();
-    std::cerr << "Pipeline string: \n" << string << std::endl;
+    std::cerr << "Pipeline string: \n" << launchString.toStdString() << std::endl;
     data->source = gst_parse_launch(launchString.toStdString().c_str(), NULL);
-    g_free(string);
+
     std::cerr << "Created worker pipeline..." << std::endl;
 
     if (data->source == NULL) {

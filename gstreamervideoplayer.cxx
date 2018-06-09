@@ -128,7 +128,6 @@ void GstreamerVideoPlayer::sendVideoSample(std::vector<unsigned char>& frame)
 void GstreamerVideoPlayer::mainLoop()
 {
     PlayerProgramData* data = NULL;
-    gchar* string = NULL;
     GstBus* bus = NULL;
     GstElement* myplayervideosink = NULL;
 
@@ -162,7 +161,6 @@ void GstreamerVideoPlayer::mainLoop()
     // id);
     std::cout << "Pipeline string: \n" << launchString.toStdString().c_str() << std::endl;  // filesrc location=file%d.ts ! tsparse ! tsdemux
     data->source = gst_parse_launch(launchString.toStdString().c_str(), NULL);
-    g_free(string);
     std::cout << "Created pipeline..." << std::endl;
 
     if (data->source == NULL) {
