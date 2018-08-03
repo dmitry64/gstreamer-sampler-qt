@@ -20,8 +20,9 @@ GstFlowReturn on_worker_new_audio_sample_from_sink(GstElement* elt, ProgramData*
     sample = gst_app_sink_pull_sample(GST_APP_SINK(elt));
     buffer = gst_sample_get_buffer(sample);
     gst_buffer_map(buffer, &info, GST_MAP_READ);
-    std::vector<signed short> outputVector(info.size / 2);
-    memcpy(outputVector.data(), info.data, info.size);
+    QSharedPointer<std::vector<signed short>> outputVector(new std::vector<signed short>(info.size / 2));
+
+    memcpy(outputVector->data(), info.data, info.size);
 
     data->worker->addSampleAndTimestamp(outputVector, buffer->pts, buffer->duration);
     data->worker->sendSignalBuffers();
@@ -41,8 +42,8 @@ GstFlowReturn on_worker_new_video_sample_from_sink(GstElement* elt, ProgramData*
     buffer = gst_sample_get_buffer(sample);
     gst_buffer_map(buffer, &info, GST_MAP_READ);
 
-    std::vector<unsigned char> outputVector(info.size);
-    memcpy(outputVector.data(), info.data, info.size);
+    QSharedPointer<std::vector<unsigned char>> outputVector(new std::vector<unsigned char>(info.size));
+    memcpy(outputVector->data(), info.data, info.size);
     data->worker->sendVideoSample(outputVector);
 
     gst_buffer_unmap(buffer, &info);
@@ -110,15 +111,17 @@ void GstreamerThreadWorker::handleCommands(ProgramData* data)
     _mutex.unlock();
 }
 
-void GstreamerThreadWorker::addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration)
+void GstreamerThreadWorker::addSampleAndTimestamp(QSharedPointer<std::vector<signed short>> samples, GstClockTime time, GstClockTime duration)
 {
     _waveThread.addSampleAndTimestamp(samples, time, duration);
 }
 
 void GstreamerThreadWorker::sendSignalBuffers()
 {
-    std::vector<signed short> samples;
-    while (_waveThread.getNextBuffer(samples)) {
+    QSharedPointer<std::vector<signed short>> samples;
+    std::vector<signed short> samplesData;
+    while (_waveThread.getNextBuffer(samplesData)) {
+        samples = QSharedPointer<std::vector<signed short>>(new std::vector<signed short>(samplesData));
         emit sampleCutReady(samples);
     }
     unsigned int coord;
@@ -135,12 +138,12 @@ GstreamerThreadWorker::GstreamerThreadWorker(QObject* parent)
 {
 }
 
-void GstreamerThreadWorker::sendAudioSample(std::vector<signed short>& samples)
+void GstreamerThreadWorker::sendAudioSample(QSharedPointer<std::vector<signed short>> samples)
 {
     emit sampleReady(samples);
 }
 
-void GstreamerThreadWorker::sendVideoSample(std::vector<unsigned char>& frame)
+void GstreamerThreadWorker::sendVideoSample(QSharedPointer<std::vector<unsigned char>> frame)
 {
     emit frameReady(frame);
 }
@@ -218,7 +221,7 @@ void GstreamerThreadWorker::mainLoop()
     gst_element_set_state(data->source, GST_STATE_PLAYING);
 
     _waveThread.startAnalysys(finalPath);
-    _timeoutId = g_timeout_add(50, worker_timeout_callback, data);
+    _timeoutId = g_timeout_add(500, worker_timeout_callback, data);
     std::cout << "Starting worker main loop..." << std::endl;
     g_main_loop_run(data->loop);
     std::cout << "Worker Main loop finished..." << std::endl;

@@ -2,6 +2,7 @@
 #define AUDIOSAMPLEVIEWER_HPP
 
 #include <QWidget>
+#include <QSharedPointer>
 
 namespace Ui
 {
@@ -16,7 +17,7 @@ public:
     explicit AudioSampleViewer(QWidget* parent = 0);
     ~AudioSampleViewer();
     std::vector<signed short> _currentSamples;
-    void drawSample(const std::vector<signed short>& samples);
+    void drawSample(QSharedPointer<std::vector<signed short>> samples);
 
 protected:
     void paintEvent(QPaintEvent* event);

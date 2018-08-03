@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QFile>
+#include <QSharedPointer>
 
 namespace Ui
 {
@@ -23,7 +24,7 @@ public:
     explicit AudioVisualizer(QWidget* parent = 0);
     ~AudioVisualizer();
 
-    void onSample(const std::vector<signed short> &samples);
+    void onSample(QSharedPointer<std::vector<signed short>> samples);
     void pause();
 
 protected:

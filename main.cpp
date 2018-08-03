@@ -27,6 +27,8 @@ int main(int argc, char* argv[])
     qRegisterMetaType<std::vector<signed short>>("std::vector<signed short>");
     qRegisterMetaType<std::vector<unsigned char>>("std::vector<unsigned char>");
     qRegisterMetaType<GstClockTime>("GstClockTime");
+    qRegisterMetaType<QSharedPointer<std::vector<signed short>>>("QSharedPointer<std::vector<signed short>>");
+    qRegisterMetaType<QSharedPointer<std::vector<unsigned char>>>("QSharedPointer<std::vector<unsigned char>>");
     MainWindow w;
     w.show();
 

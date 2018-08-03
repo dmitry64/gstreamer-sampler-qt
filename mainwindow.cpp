@@ -143,32 +143,32 @@ void MainWindow::startAllWorkers()
     playerRight.start();
 }
 
-void MainWindow::onSampleLeft(std::vector<signed short> samples)
+void MainWindow::onSampleLeft(QSharedPointer<std::vector<signed short>> samples)
 {
     ui->audioWidgetLeft->onSample(samples);
 }
 
-void MainWindow::onSampleRight(std::vector<signed short> samples)
+void MainWindow::onSampleRight(QSharedPointer<std::vector<signed short>> samples)
 {
     ui->audioWidgetRight->onSample(samples);
 }
 
-void MainWindow::onFrameLeft(std::vector<unsigned char> frame)
+void MainWindow::onFrameLeft(QSharedPointer<std::vector<unsigned char>> frame)
 {
     ui->videoWidgetLeft->drawFrame(frame);
 }
 
-void MainWindow::onFrameRight(std::vector<unsigned char> frame)
+void MainWindow::onFrameRight(QSharedPointer<std::vector<unsigned char>> frame)
 {
     ui->videoWidgetRight->drawFrame(frame);
 }
 
-void MainWindow::onSampleCutLeft(std::vector<signed short> samples)
+void MainWindow::onSampleCutLeft(QSharedPointer<std::vector<signed short>> samples)
 {
     ui->sampleViewerLeft->drawSample(samples);
 }
 
-void MainWindow::onSampleCutRight(std::vector<signed short> samples)
+void MainWindow::onSampleCutRight(QSharedPointer<std::vector<signed short>> samples)
 {
     ui->sampleViewerRight->drawSample(samples);
 }

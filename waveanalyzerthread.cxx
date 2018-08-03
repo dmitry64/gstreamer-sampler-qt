@@ -30,7 +30,7 @@ void WaveAnalyzerThread::startAnalysys(QString filePath)
     std::cout << "Analyzer thread started..." << std::endl;
 }
 
-void WaveAnalyzerThread::addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration)
+void WaveAnalyzerThread::addSampleAndTimestamp(QSharedPointer<std::vector<signed short>> samples, GstClockTime time, GstClockTime duration)
 {
     _inputMutex.lock();
     _analyzer.addBufferWithTimecode(samples, time, duration);

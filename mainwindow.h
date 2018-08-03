@@ -69,12 +69,12 @@ private slots:
     void on_hideUiButton_released();
 
 public slots:
-    void onSampleLeft(std::vector<signed short> samples);
-    void onSampleRight(std::vector<signed short> samples);
-    void onFrameLeft(std::vector<unsigned char> frame);
-    void onFrameRight(std::vector<unsigned char> frame);
-    void onSampleCutLeft(std::vector<signed short> samples);
-    void onSampleCutRight(std::vector<signed short> samples);
+    void onSampleLeft(QSharedPointer<std::vector<signed short>> samples);
+    void onSampleRight(QSharedPointer<std::vector<signed short>> samples);
+    void onFrameLeft(QSharedPointer<std::vector<unsigned char>> frame);
+    void onFrameRight(QSharedPointer<std::vector<unsigned char>> frame);
+    void onSampleCutLeft(QSharedPointer<std::vector<signed short>> samples);
+    void onSampleCutRight(QSharedPointer<std::vector<signed short>> samples);
     void onNumberDecodedLeft(unsigned int number);
     void onNewCoord(unsigned int coord, GstClockTime time, int cameraIndex);
     void onClientConnected();

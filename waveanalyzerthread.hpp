@@ -5,6 +5,7 @@
 #include <atomic>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QSharedPointer>
 #include "waveanalyzer.hpp"
 
 class WaveAnalyzerThread : public QThread
@@ -24,7 +25,7 @@ public:
     WaveAnalyzerThread(QObject* parent = nullptr);
     ~WaveAnalyzerThread();
     void startAnalysys(QString filePath);
-    void addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration);
+    void addSampleAndTimestamp(QSharedPointer<std::vector<signed short>> samples, GstClockTime time, GstClockTime duration);
     bool getNextBuffer(std::vector<signed short>& output);
     bool getNextCoord(unsigned int& result, GstClockTime& time);
 };

@@ -12,10 +12,9 @@ VideoWidget::VideoWidget(QWidget* parent)
 
 VideoWidget::~VideoWidget() {}
 
-void VideoWidget::drawFrame(const std::vector<unsigned char>& frame)
+void VideoWidget::drawFrame(QSharedPointer<std::vector<unsigned char>> frame)
 {
-    // qDebug() << "NEW FRAME!";
-    if (frameList.size() < 3) {
+    if (frameList.size() < 60) {
         frameList.push_back(frame);
     }
 }
@@ -27,7 +26,7 @@ void VideoWidget::cleanAll()
     for (unsigned char& ptr : data) {
         ptr = rand() % 255;
     }
-    frameList.push_back(data);
+    // frameList.push_back(data);
 }
 
 void VideoWidget::paintEvent(QPaintEvent* event)
@@ -37,7 +36,7 @@ void VideoWidget::paintEvent(QPaintEvent* event)
     if (!frameList.empty()) {
         const auto& frame = frameList.front();
 
-        QImage image((const unsigned char*) frame.data(), 1280, 720, QImage::Format_RGB888);
+        QImage image((const unsigned char*) frame->data(), 1280, 720, QImage::Format_RGB888);
         painter.drawImage(QRect(0, 0, width(), height()), image);
         while (frameList.size() != 1) {
             frameList.pop_front();

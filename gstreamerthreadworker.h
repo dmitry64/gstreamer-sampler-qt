@@ -15,6 +15,7 @@
 #include <queue>
 #include <mutex>
 #include <QThread>
+#include <QSharedPointer>
 
 #include "commands.h"
 #include "waveanalyzer.hpp"
@@ -56,7 +57,7 @@ private:
 
 public:
     void handleCommands(ProgramData* data);
-    void addSampleAndTimestamp(const std::vector<signed short>& samples, GstClockTime time, GstClockTime duration);
+    void addSampleAndTimestamp(QSharedPointer<std::vector<signed short>> samples, GstClockTime time, GstClockTime duration);
     void sendSignalBuffers();
     void stopWorker();
     void setRegistrationFileName(const QString& path, const QString& name);
@@ -64,15 +65,15 @@ public:
 public:
     explicit GstreamerThreadWorker(QObject* parent = nullptr);
 
-    void sendAudioSample(std::vector<signed short>& samples);
-    void sendVideoSample(std::vector<unsigned char>& frame);
+    void sendAudioSample(QSharedPointer<std::vector<signed short>> samples);
+    void sendVideoSample(QSharedPointer<std::vector<unsigned char>> frame);
     void setCameraType(const CameraType& cameraType);
     void stopHandlerTimeout();
 
 signals:
-    void sampleReady(std::vector<signed short> samples);
-    void frameReady(std::vector<unsigned char> frame);
-    void sampleCutReady(std::vector<signed short> samples);
+    void sampleReady(QSharedPointer<std::vector<signed short>> samples);
+    void frameReady(QSharedPointer<std::vector<unsigned char>> frame);
+    void sampleCutReady(QSharedPointer<std::vector<signed short>> samples);
     void coordReady(unsigned int coord, GstClockTime time, int cameraIndex);
     void finished();
 };

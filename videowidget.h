@@ -2,6 +2,7 @@
 #define VIDEOWIDGET_H
 
 #include <QWidget>
+#include <QSharedPointer>
 
 namespace Ui
 {
@@ -12,12 +13,12 @@ class VideoWidget : public QWidget
 {
     Q_OBJECT
 
-    std::list<std::vector<unsigned char>> frameList;
+    std::list<QSharedPointer<std::vector<unsigned char>>> frameList;
 
 public:
     explicit VideoWidget(QWidget* parent = 0);
     ~VideoWidget();
-    void drawFrame(const std::vector<unsigned char>& frame);
+    void drawFrame(QSharedPointer<std::vector<unsigned char>> frame);
     void cleanAll();
 
 protected:

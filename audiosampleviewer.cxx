@@ -16,9 +16,9 @@ AudioSampleViewer::~AudioSampleViewer()
     delete ui;
 }
 
-void AudioSampleViewer::drawSample(const std::vector<signed short>& samples)
+void AudioSampleViewer::drawSample(QSharedPointer<std::vector<signed short>> samples)
 {
-    _currentSamples = samples;
+    _currentSamples = samples.operator*();
     update();
 }
 

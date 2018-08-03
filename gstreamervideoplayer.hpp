@@ -15,6 +15,7 @@
 #include <queue>
 #include <mutex>
 #include <QThread>
+#include <QSharedPointer>
 
 #include "commands.h"
 
@@ -60,12 +61,12 @@ public:
 public:
     explicit GstreamerVideoPlayer(QObject* parent = nullptr);
 
-    void sendVideoSample(std::vector<unsigned char>& frame);
+    void sendVideoSample(QSharedPointer<std::vector<unsigned char>> frame);
     void setCameraType(const CameraType& cameraType);
     void setRegistrationFileName(const QString& path, const QString& name);
 
 signals:
-    void frameReady(std::vector<unsigned char> frame);
+    void frameReady(QSharedPointer<std::vector<unsigned char>> frame);
     void statusChanged(bool status);
     void finished();
 };

@@ -5,6 +5,7 @@
 #include <vector>
 #include <queue>
 #include <array>
+#include <QSharedPointer>
 const static unsigned int SAMPLE_SIZE = 550;
 const static int FRONT_THRESHOLD = 12000;
 const static unsigned int SAMPLE_OFFSET = 100;
@@ -53,7 +54,7 @@ private:
 
 public:
     WaveAnalyzer();
-    void addBufferWithTimecode(const SignalsBuffer& samples, GstClockTime timestamp, GstClockTime duration);
+    void addBufferWithTimecode(QSharedPointer<std::vector<signed short>> samples, GstClockTime timestamp, GstClockTime duration);
     void analyze();
     bool getNextBuffer(SignalsBuffer& output);
     bool getNextCoord(unsigned int& coord, GstClockTime& time);

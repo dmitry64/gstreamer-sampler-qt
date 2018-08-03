@@ -17,14 +17,14 @@ AudioVisualizer::AudioVisualizer(QWidget* parent)
 
 AudioVisualizer::~AudioVisualizer() {}
 
-void AudioVisualizer::onSample(const std::vector<signed short>& samples)
+void AudioVisualizer::onSample(QSharedPointer<std::vector<signed short>> samples)
 {
     if (!_pause) {
         if (_data.size() < samplesSize * 4) {
-            _data.push_back(samples);
+            _data.push_back(samples.operator*());
         }
         else {
-            _data.push_back(samples);
+            _data.push_back(samples.operator*());
             _data.pop_front();
         }
     }

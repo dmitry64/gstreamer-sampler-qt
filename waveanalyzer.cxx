@@ -277,11 +277,13 @@ bool WaveAnalyzer::checkFront(const WaveAnalyzer::TWaveFront& front)
 
 WaveAnalyzer::WaveAnalyzer() {}
 
-void WaveAnalyzer::addBufferWithTimecode(const SignalsBuffer& samples, GstClockTime timestamp, GstClockTime duration)
+void WaveAnalyzer::addBufferWithTimecode(QSharedPointer<std::vector<signed short>> samples, GstClockTime timestamp, GstClockTime duration)
 {
     // std::cout << "NEW BUFFER" << std::endl;
-    _buffers.insert(_buffers.end(), samples.begin(), samples.end());
-    unsigned long size = samples.size();
+    const std::vector<signed short>& currentBuffer = samples.operator*();
+    Q_ASSERT(!currentBuffer.empty());
+    _buffers.insert(_buffers.end(), currentBuffer.begin(), currentBuffer.end());
+    unsigned long size = samples->size();
 
     GstClockTime timePerSample = duration / size;
 

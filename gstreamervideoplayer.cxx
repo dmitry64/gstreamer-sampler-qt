@@ -25,8 +25,8 @@ GstFlowReturn on_new_video_sample_from_sink_player(GstElement* elt, PlayerProgra
     buffer = gst_sample_get_buffer(sample);
     gst_buffer_map(buffer, &info, GST_MAP_READ);
 
-    std::vector<unsigned char> outputVector(info.size);
-    memcpy(outputVector.data(), info.data, info.size);
+    QSharedPointer<std::vector<unsigned char>> outputVector(new std::vector<unsigned char>(info.size));
+    memcpy(outputVector->data(), info.data, info.size);
     data->worker->sendVideoSample(outputVector);
     gst_buffer_unmap(buffer, &info);
     gst_sample_unref(sample);
@@ -120,7 +120,7 @@ GstreamerVideoPlayer::GstreamerVideoPlayer(QObject* parent)
 {
 }
 
-void GstreamerVideoPlayer::sendVideoSample(std::vector<unsigned char>& frame)
+void GstreamerVideoPlayer::sendVideoSample(QSharedPointer<std::vector<unsigned char>> frame)
 {
     emit frameReady(frame);
 }
@@ -184,7 +184,7 @@ void GstreamerVideoPlayer::mainLoop()
 
     gst_element_set_state(data->source, GST_STATE_PAUSED);
 
-    _timeoutId = g_timeout_add(50, timeout_callback_player, data);
+    _timeoutId = g_timeout_add(500, timeout_callback_player, data);
     std::cout << "Starting main loop..." << std::endl;
     g_main_loop_run(data->loop);
     std::cout << "Main loop finished..." << std::endl;
