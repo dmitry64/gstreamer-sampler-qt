@@ -23,6 +23,8 @@ public slots:
     void slotServerRead();
     void slotClientDisconnected();
 signals:
+    void clientConnected();
+    void clientDisconnected();
     void doStartRegistration(QString name);
     void doStopRegistration();
     void doViewMode();

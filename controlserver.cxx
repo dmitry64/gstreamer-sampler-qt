@@ -94,6 +94,7 @@ void ControlServer::slotNewConnection()
 
     connect(mTcpSocket, &QTcpSocket::readyRead, this, &ControlServer::slotServerRead);
     connect(mTcpSocket, &QTcpSocket::disconnected, this, &ControlServer::slotClientDisconnected);
+    emit clientConnected();
 }
 
 void ControlServer::slotServerRead()
@@ -110,4 +111,5 @@ void ControlServer::slotServerRead()
 void ControlServer::slotClientDisconnected()
 {
     mTcpSocket->close();
+    emit clientDisconnected();
 }

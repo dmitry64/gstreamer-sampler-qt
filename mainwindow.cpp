@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget* parent)
     QObject::connect(&_server, &ControlServer::doViewMode, this, &MainWindow::onViewMode);
     QObject::connect(&_server, &ControlServer::doRealtimeMode, this, &MainWindow::onRealtimeMode);
     QObject::connect(&_server, &ControlServer::doSetCoord, this, &MainWindow::onSetCoord);
+    QObject::connect(&_server, &ControlServer::clientConnected, this, &MainWindow::onClientConnected);
+    QObject::connect(&_server, &ControlServer::clientDisconnected, this, &MainWindow::onClientDisconnected);
 
     workerLeft.setCameraType(GstreamerThreadWorker::CameraType::eCameraLeft);
     workerRight.setCameraType(GstreamerThreadWorker::CameraType::eCameraRight);
@@ -32,6 +34,8 @@ MainWindow::MainWindow(QWidget* parent)
     playerLeft.setCameraType(GstreamerVideoPlayer::CameraType::eCameraLeft);
     playerRight.setCameraType(GstreamerVideoPlayer::CameraType::eCameraRight);
 
+    ui->uiGroupBox->hide();
+    ui->registrationLabel->setText(tr("Waiting..."));
     startAllWorkers();
 
     switchMode(1);
@@ -62,6 +66,7 @@ void MainWindow::switchMode(int mode)
         QObject::connect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
         QObject::connect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
         ui->modeSwitchButton->setText("Mode: Realtime");
+        ui->modeLabel->setText(tr("Realtime"));
         ui->coordSlider->setEnabled(false);
     } break;
     case 1: {
@@ -72,6 +77,7 @@ void MainWindow::switchMode(int mode)
         QObject::connect(&playerLeft, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameLeft);
 
         ui->modeSwitchButton->setText("Mode: View");
+        ui->modeLabel->setText(tr("View"));
         ui->coordSlider->setEnabled(true);
 
     } break;
@@ -190,6 +196,16 @@ void MainWindow::onNewCoord(unsigned int coord, GstClockTime time, int cameraInd
     }
 }
 
+void MainWindow::onClientConnected()
+{
+    ui->connectionLabel->setText(tr("Connected"));
+}
+
+void MainWindow::onClientDisconnected()
+{
+    ui->connectionLabel->setText(tr("Disconnected"));
+}
+
 void MainWindow::on_audioPauseButton_released()
 {
     ui->audioWidgetLeft->pause();
@@ -249,6 +265,8 @@ void MainWindow::onRegistrationStart(QString name)
     _coordBuffers.at(1).clear();
 
     startAllWorkers();
+    ui->registrationLabel->setText(tr("Recording..."));
+    ui->registrationNameLabel->setText(name);
 }
 
 void MainWindow::onRegistrationStop()
@@ -256,6 +274,8 @@ void MainWindow::onRegistrationStop()
     stopAllWorkers();
     _coordBuffers.at(0).clear();
     _coordBuffers.at(1).clear();
+    ui->registrationLabel->setText(tr("Stopped"));
+    ui->registrationNameLabel->setText("");
 }
 
 void MainWindow::onViewMode()
@@ -281,4 +301,14 @@ void MainWindow::on_startRegistrationButton_released()
 void MainWindow::on_stopRegistrationButton_released()
 {
     onRegistrationStop();
+}
+
+void MainWindow::on_hideUiButton_released()
+{
+    if (ui->uiGroupBox->isVisible()) {
+        ui->uiGroupBox->hide();
+    }
+    else {
+        ui->uiGroupBox->show();
+    }
 }

@@ -66,6 +66,8 @@ private slots:
 
     void on_stopRegistrationButton_released();
 
+    void on_hideUiButton_released();
+
 public slots:
     void onSampleLeft(std::vector<signed short> samples);
     void onSampleRight(std::vector<signed short> samples);
@@ -75,6 +77,8 @@ public slots:
     void onSampleCutRight(std::vector<signed short> samples);
     void onNumberDecodedLeft(unsigned int number);
     void onNewCoord(unsigned int coord, GstClockTime time, int cameraIndex);
+    void onClientConnected();
+    void onClientDisconnected();
 
 private:
     Ui::MainWindow* ui;
