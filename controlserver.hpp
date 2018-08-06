@@ -13,7 +13,7 @@ public:
 
 private:
     void parseMessage();
-    void onMessageStartReg();
+    void onMessageStartReg(const QString &name);
     void onMessageStopReg();
     void onMessageViewMode();
     void onMessageRealtimeMode();

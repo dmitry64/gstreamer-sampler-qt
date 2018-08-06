@@ -27,9 +27,14 @@ void ControlServer::parseMessage()
         std::cout << "RAW SIZE:" << std::hex << static_cast<unsigned int>(messageSize) << " ID:" << static_cast<unsigned int>(messageId) << std::endl;
         if ((_currentArray.size()) >= (messageSize + VIDEO_PROTOCOL::HEADER_SIZE)) {
             switch (messageId) {
-            case VIDEO_PROTOCOL::MESSAGE_TYPE_START_REG:
-                onMessageStartReg();
-                break;
+            case VIDEO_PROTOCOL::MESSAGE_TYPE_START_REG: {
+                QByteArray stringArray(messageSize, 0x00);
+                for (int i = 0; i < messageSize; ++i) {
+                    stringArray[i] = _currentArray.at(i + VIDEO_PROTOCOL::HEADER_SIZE);
+                }
+
+                onMessageStartReg(QString(stringArray));
+            } break;
             case VIDEO_PROTOCOL::MESSAGE_TYPE_STOP_REG:
                 onMessageStopReg();
                 break;
@@ -55,10 +60,10 @@ void ControlServer::parseMessage()
     }
 }
 
-void ControlServer::onMessageStartReg()
+void ControlServer::onMessageStartReg(const QString& name)
 {
     std::cout << "MESSAGE START REG" << std::endl;
-    QString name = "REG_FILENAME";
+
     emit doStartRegistration(name);
 }
 
