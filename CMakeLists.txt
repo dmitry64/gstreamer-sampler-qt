@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(gstreamer-sampler-qt)
+project(avicon31_video)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -16,8 +16,6 @@ pkg_check_modules(GST REQUIRED gstreamer-1.0>=1.4
                                gstreamer-sdp-1.0>=1.4
                                gstreamer-video-1.0>=1.4
                                gstreamer-app-1.0>=1.4)
-
-
 
 
 add_executable(${PROJECT_NAME} "main.cpp" "mainwindow.cpp" "mainwindow.h" "mainwindow.ui" "gstreamerthreadworker.h" "gstreamerthreadworker.cpp" "audiovisualizer.h" "audiovisualizer.cpp" "videowidget.cpp" "videowidget.h" "commands.h" "commands.cpp" "waveanalyzer.hpp" "waveanalyzer.cxx" "audiosampleviewer.cxx" "audiosampleviewer.hpp" "waveanalyzerthread.hpp" "waveanalyzerthread.cxx" "gstreamervideoplayer.cxx" "gstreamervideoplayer.hpp" "controlserver.cxx" "controlserver.hpp" "videocontrolprotocol.hpp" "settings.cpp" "settings.h")
