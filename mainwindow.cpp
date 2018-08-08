@@ -210,6 +210,8 @@ void MainWindow::on_audioPauseButton_released()
 {
     ui->audioWidgetLeft->pause();
     ui->audioWidgetRight->pause();
+    ui->sampleViewerLeft->pause();
+    ui->sampleViewerRight->pause();
 }
 
 void MainWindow::on_seekButton_released()
