@@ -6,14 +6,15 @@
 #include <queue>
 #include <array>
 #include <QSharedPointer>
-const static unsigned int SAMPLE_SIZE = 550;
-const static int FRONT_THRESHOLD = 12000;
-const static unsigned int SAMPLE_OFFSET = 100;
-const static int BASELINE_WINDOW_WIDTH = 8 * 2 - 3;
-const static int NEG_FRONT_WINDOW_WIDTH = 4;
+#include <QFile>
+const static unsigned int SAMPLE_SIZE = 300;
+const static int FRONT_THRESHOLD = 10000;
+const static unsigned int SAMPLE_OFFSET = 30;
+const static int BASELINE_WINDOW_WIDTH = 6;
+const static int NEG_FRONT_WINDOW_WIDTH = 3;
 const static double AvTOL = 12;
 const static int AFTOL = 32767 / 2;
-const static int DFTOL = 4;
+const static int DFTOL = 12;
 
 class WaveAnalyzer
 {
@@ -47,6 +48,8 @@ private:
     std::queue<SignalsBuffer> _outputBuffers;
     std::queue<SyncPoint> _syncPoints;
     std::string _filename;
+    QFile _outputFile;
+    int _counter;
 
 private:
     bool decodeBuffer(const SignalsBuffer& buffer, unsigned int& result);

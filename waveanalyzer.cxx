@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <numeric>
 #include <fstream>
+#include <bitset>
+#include <iomanip>
+
 
 void WaveAnalyzer::analyze()
 {
@@ -35,7 +38,7 @@ void WaveAnalyzer::analyze()
             }
 
             if (baseLine == _buffers.end()) {
-                std::cout << "Baseline not found!" << std::endl;
+                std::cout << "========= Baseline not found!" << std::endl;
                 _buffers.clear();
                 _timeBuffers.clear();
 
@@ -46,22 +49,38 @@ void WaveAnalyzer::analyze()
 
             for (SignalsBuffer::iterator it = baseLine; (it + NEG_FRONT_WINDOW_WIDTH) <= _buffers.end(); ++it) {
                 SignalsBuffer::iterator leftBegin = it - NEG_FRONT_WINDOW_WIDTH;
-                SignalsBuffer::iterator leftEnd = it;
+                SignalsBuffer::iterator leftEnd = it + 1;
                 SignalsBuffer::iterator rightBegin = it;
-                SignalsBuffer::iterator rightEnd = it + NEG_FRONT_WINDOW_WIDTH;
+                SignalsBuffer::iterator rightEnd = it + NEG_FRONT_WINDOW_WIDTH + 1;
                 int leftAvg = std::accumulate(leftBegin, leftEnd, 0) / static_cast<int>(NEG_FRONT_WINDOW_WIDTH);
                 int rightAvg = std::accumulate(rightBegin, rightEnd, 0) / static_cast<int>(NEG_FRONT_WINDOW_WIDTH);
                 int diff = leftAvg - rightAvg;
 
                 if (diff > FRONT_THRESHOLD) {
-                    it += 2;
-                    beginIt = it;
+                    // std::cout << "FRONT:" << diff << std::endl;
+                    int min_val = it.operator*();
+                    SignalsBuffer::iterator min_iter = it;
+                    int count = 0;
+                    for (SignalsBuffer::iterator it2 = it; it2 < _buffers.end() && count < 6; ++it2) {
+                        if (it2.operator*() <= min_val) {
+                            min_val = it2.operator*();
+                            min_iter = it2;
+                        }
+                        else {
+                            break;
+                        }
+
+                        ++count;
+                    }
+                    // it += 3;
+                    beginIt = min_iter;
                     if (std::distance(beginIt, _buffers.end()) > SAMPLE_SIZE) {
                         endIt = beginIt + SAMPLE_SIZE;
                         found = true;
                         break;
                     }
                     else {
+                        found = false;
                         return;
                     }
                 }
@@ -120,7 +139,8 @@ void WaveAnalyzer::setFilename(const std::string& filename)
 
 bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsigned int& result)
 {
-    unsigned int acode;
+    // return false;
+    unsigned int acode = 0;
     int startpoint = 0;
     int wavesize = buffer.size();
     const WaveAnalyzer::SignalsBuffer& wave = buffer;
@@ -132,8 +152,8 @@ bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsig
     int State = 0;
     int xref = 0;
     int FrontsSize = 0;
-    int CodeLENGTH = 65 * 8 + 4;
-    int STOL = 2;
+    int CodeLENGTH = 270;
+    int STOL = 4;
 
     std::array<TWaveFront, 66> Fronts;
     TWaveFront emptyFront;
@@ -144,14 +164,16 @@ bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsig
     std::fill(Fronts.begin(), Fronts.end(), emptyFront);
 
     bool Result = false;
-
+    // std::cout << "wave:" << wavesize << " code:" << CodeLENGTH << " first:" << wave.at(0) << std::endl;
     assert(!((startpoint + CodeLENGTH) > wavesize));
     State = 1;
     i = startpoint;
     k = 0;
 
+
     while (i < (startpoint + CodeLENGTH)) {
-        dy = wave[i + 1] - wave[i];
+        assert(k < Fronts.size());
+        dy = wave.at(i + 1) - wave.at(i);
         if (std::abs(dy) < STOL) {
             w = 0;
         }
@@ -166,14 +188,16 @@ bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsig
         case 1: {
             switch (w) {
             case 1: {
-                Fronts[k].xl = i;  // k?
-                Fronts[k].yl = wave[i];
+                assert(k < Fronts.size());
+                Fronts.at(k).xl = i;  // k?
+                Fronts.at(k).yl = wave.at(i);
                 State = 2;
                 break;
             }
             case 2: {
-                Fronts[k].xl = i;
-                Fronts[k].yl = wave[i];
+                assert(k < Fronts.size());
+                Fronts.at(k).xl = i;
+                Fronts.at(k).yl = wave.at(i);
                 State = 3;
                 break;
             }
@@ -183,23 +207,27 @@ bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsig
         case 2: {
             switch (w) {
             case 0: {
-                Fronts[k].xr = i;
-                Fronts[k].yr = wave[i];
-                if (checkFront(Fronts[k])) {
+                /*assert(k < Fronts.size());
+                Fronts.at(k).xr = i;
+                Fronts.at(k).yr = wave.at(i);
+                if (checkFront(Fronts.at(k))) {
                     k++;
                 }
-                State = 1;
+                State = 1;*/
                 break;
             }
             case 2: {
-                Fronts[k].xr = i;
-                Fronts[k].yr = wave[i];
-                if (checkFront(Fronts[k])) {
+                assert(k < Fronts.size());
+                Fronts.at(k).xr = i;
+                Fronts.at(k).yr = wave.at(i);
+                if (checkFront(Fronts.at(k))) {
                     k++;
+                    assert(k < Fronts.size());
+                    Fronts.at(k).xl = i;           //
+                    Fronts.at(k).yl = wave.at(i);  //
+                    State = 3;
                 }
-                Fronts[k].xl = i;        //
-                Fronts[k].yl = wave[i];  //
-                State = 3;
+
                 break;
             }
             }
@@ -208,25 +236,29 @@ bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsig
         case 3: {
             switch (w) {
             case 0: {
-                Fronts[k].xr = i;
-                Fronts[k].yr = wave[i];
-                if (checkFront(Fronts[k])) {
+                /*assert(k < Fronts.size());
+                Fronts.at(k).xr = i;
+                Fronts.at(k).yr = wave.at(i);
+                if (checkFront(Fronts.at(k))) {
                     k++;
                     // Fronts[k+1].xl := i;  //
-                    // Fronts[k+1].yl := wave[i]; //
+                    // Fronts[k+1].yl := wave.at(i); //
                 }
-                State = 1;
+                State = 1;*/
                 break;
             }
             case 1: {
-                Fronts[k].xr = i;
-                Fronts[k].yr = wave[i];
-                if (checkFront(Fronts[k])) {
+                assert(k < Fronts.size());
+                Fronts.at(k).xr = i;
+                Fronts.at(k).yr = wave.at(i);
+                if (checkFront(Fronts.at(k))) {
                     k++;
+                    assert(k < Fronts.size());
+                    Fronts.at(k).xl = i;
+                    Fronts.at(k).yl = wave.at(i);
+                    State = 2;
                 }
-                Fronts[k].xl = i;
-                Fronts[k].yl = wave[i];
-                State = 2;
+
                 break;
             }
             }
@@ -237,17 +269,19 @@ bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsig
     }
 
     FrontsSize = k;
+    assert(k < Fronts.size());
     xref = startpoint;
     acode = 0;
     i = 0;
 
-    for (k = 0; k < FrontsSize; ++k) {
-        if ((Fronts[k].xr > (xref + 12)) && (Fronts[k].xr < (xref + 20))) {
+    for (int m = 0; m < FrontsSize; ++m) {
+        assert(m < Fronts.size());
+        if ((Fronts.at(m).xr > (xref + 6))) {
             acode = acode >> 1;
-            if (Fronts[k].yl > Fronts[k].yr) {
+            if (Fronts.at(m).yl > Fronts.at(m).yr) {
                 acode = acode | 0x80000000;  // 1 = '\'
             }
-            xref = Fronts[k].xr;
+            xref = Fronts.at(m).xr;
             i++;
             if (i >= 32) break;
         }
@@ -261,6 +295,7 @@ bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsig
         Result = true;
         result = acode;
     }
+    std::cout << "Result:" << std::setw(10) << result << " bits:" << std::bitset<32>(acode) << std::endl;
     return Result;
 }
 
@@ -275,7 +310,12 @@ bool WaveAnalyzer::checkFront(const WaveAnalyzer::TWaveFront& front)
     return Result;
 }
 
-WaveAnalyzer::WaveAnalyzer() {}
+WaveAnalyzer::WaveAnalyzer()
+    : _outputFile("TESTSAMPLES4.bin")
+{
+    _outputFile.open(QIODevice::WriteOnly);
+    _counter = 0;
+}
 
 void WaveAnalyzer::addBufferWithTimecode(QSharedPointer<std::vector<signed short>> samples, GstClockTime timestamp, GstClockTime duration)
 {
@@ -284,6 +324,16 @@ void WaveAnalyzer::addBufferWithTimecode(QSharedPointer<std::vector<signed short
     Q_ASSERT(!currentBuffer.empty());
     _buffers.insert(_buffers.end(), currentBuffer.begin(), currentBuffer.end());
     unsigned long size = samples->size();
+
+    if (_counter < 100) {
+        _outputFile.write(reinterpret_cast<char*>(samples->data()), samples->size() * 2);
+        _counter++;
+    }
+    else {
+        if (_outputFile.isOpen()) {
+            _outputFile.close();
+        }
+    }
 
     GstClockTime timePerSample = duration / size;
 
