@@ -24,11 +24,11 @@ void ControlServer::parseMessage()
         unsigned char messageId = _currentArray.at(0);
         unsigned char messageSize = _currentArray.at(1);
 
-        std::cout << "RAW SIZE:" << std::hex << static_cast<unsigned int>(messageSize) << " ID:" << static_cast<unsigned int>(messageId) << std::endl;
+        std::cout << "RAW SIZE:" << static_cast<unsigned int>(messageSize) << " ID:" << std::hex << static_cast<unsigned int>(messageId) << std::dec << std::endl;
         if ((_currentArray.size()) >= (messageSize + VIDEO_PROTOCOL::HEADER_SIZE)) {
             switch (messageId) {
             case VIDEO_PROTOCOL::MESSAGE_TYPE_START_REG: {
-                std::cout << "START REG: " << static_cast<int>(messageSize) << std::endl;
+                std::cout << "=================================== START REG: " << static_cast<unsigned int>(messageSize) << std::endl;
                 QByteArray stringArray(messageSize, 0x00);
 
                 for (int i = 0; i < messageSize; ++i) {
@@ -39,22 +39,33 @@ void ControlServer::parseMessage()
                 onMessageStartReg(QString(stringArray));
             } break;
             case VIDEO_PROTOCOL::MESSAGE_TYPE_STOP_REG:
+                std::cout << "=================================== STOP REG! " << std::endl;
                 onMessageStopReg();
                 break;
             case VIDEO_PROTOCOL::MESSAGE_TYPE_VIEW_MODE:
+                std::cout << "=================================== VIEW MODE! " << std::endl;
                 onMessageViewMode();
                 break;
             case VIDEO_PROTOCOL::MESSAGE_TYPE_REALTIME_MODE:
+                std::cout << "=================================== REALTIME MODE! " << std::endl;
                 onMessageRealtimeMode();
                 break;
             case VIDEO_PROTOCOL::MESSAGE_TYPE_SHOW_COORD:
-                unsigned int coord;
-                unsigned int b1 = _currentArray.at(2);
-                unsigned int b2 = _currentArray.at(3);
-                unsigned int b3 = _currentArray.at(4);
-                unsigned int b4 = _currentArray.at(5);
-                coord = b1 | b2 << 8 | b3 << 16 | b4 << 24;
+                unsigned int coord = 0;
+                unsigned int b1 = _currentArray.at(2) & 0x000000ff;
+                unsigned int b2 = _currentArray.at(3) & 0x000000ff;
+                unsigned int b3 = _currentArray.at(4) & 0x000000ff;
+                unsigned int b4 = _currentArray.at(5) & 0x000000ff;
 
+                coord = b4;
+                coord = coord << 8;
+                coord |= b3;
+                coord = coord << 8;
+                coord |= b2;
+                coord = coord << 8;
+                coord |= b1;
+
+                std::cout << "=================================== SHOW: " << coord << std::endl;
                 onMessageShowCoord(coord);
                 break;
             }

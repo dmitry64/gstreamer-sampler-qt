@@ -18,14 +18,7 @@ void PlayerSeekCommand::handleCommand(PlayerProgramData* data)
 
     gst_element_set_state(data->source, GST_STATE_PLAYING);
     std::cout << "SEEK:" << _pos << std::endl;
-    if (!gst_element_seek(data->source,
-                          1.0,
-                          GST_FORMAT_TIME,
-                          static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT | GST_SEEK_FLAG_SKIP | GST_SEEK_FLAG_SNAP_NEAREST | GST_SEEK_FLAG_TRICKMODE_KEY_UNITS | GST_SEEK_FLAG_TRICKMODE_NO_AUDIO),
-                          GST_SEEK_TYPE_SET,
-                          _pos,
-                          GST_SEEK_TYPE_NONE,
-                          GST_CLOCK_TIME_NONE)) {
+    if (!gst_element_seek(data->source, 1.0, GST_FORMAT_TIME, static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_TRICKMODE_KEY_UNITS | GST_SEEK_FLAG_TRICKMODE_NO_AUDIO), GST_SEEK_TYPE_SET, _pos, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
         std::cout << "seek failed" << std::endl;
         assert(false);
     }

@@ -37,6 +37,9 @@ class MainWindow : public QMainWindow
 private:
     // using CoordPair = std::pair<unsigned int, GstClockTime>;
     using CoordVector = std::vector<CoordPair>;
+    int _mode;
+
+    unsigned int _lastViewCoord;
 
 public:
     explicit MainWindow(QWidget* parent = 0);

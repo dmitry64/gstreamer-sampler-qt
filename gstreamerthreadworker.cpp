@@ -70,8 +70,9 @@ static gboolean on_worker_source_message(GstBus* bus, GstMessage* message, Progr
 
 static gboolean gst_worker_my_filter_sink_event_worker(GstPad* pad, GstObject* parent, GstEvent* event)
 {
-    std::cout << "WORKER EVENT:" << GST_EVENT_TYPE_NAME(event) << std::endl;
-
+    if (event->type != GST_EVENT_TAG) {
+        std::cout << "WORKER EVENT:" << GST_EVENT_TYPE_NAME(event) << std::endl;
+    }
     switch (GST_EVENT_TYPE(event)) {
     case GST_EVENT_EOS:
         std::cerr << "WORKER EOS EVENT!" << std::endl;
@@ -221,7 +222,7 @@ void GstreamerThreadWorker::mainLoop()
     gst_element_set_state(data->source, GST_STATE_PLAYING);
 
     _waveThread.startAnalysys(finalPath);
-    _timeoutId = g_timeout_add(500, worker_timeout_callback, data);
+    _timeoutId = g_timeout_add(100, worker_timeout_callback, data);
     std::cout << "Starting worker main loop..." << std::endl;
     g_main_loop_run(data->loop);
     std::cout << "Worker Main loop finished..." << std::endl;

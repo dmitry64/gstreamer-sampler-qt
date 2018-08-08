@@ -56,8 +56,9 @@ static gboolean on_source_message_player(GstBus* bus, GstMessage* message, Playe
 
 static gboolean gst_my_filter_sink_event_player(GstPad* pad, GstObject* parent, GstEvent* event)
 {
-    std::cout << "PLAYER EVENT:" << GST_EVENT_TYPE_NAME(event) << std::endl;
-
+    if (event->type != GST_EVENT_TAG) {
+        std::cout << "PLAYER EVENT:" << GST_EVENT_TYPE_NAME(event) << std::endl;
+    }
     switch (GST_EVENT_TYPE(event)) {
     case GST_EVENT_EOS:
         std::cerr << "PLAYER EOS EVENT!" << std::endl;
@@ -101,7 +102,7 @@ void GstreamerVideoPlayer::run()
 void GstreamerVideoPlayer::handleCommands(PlayerProgramData* data)
 {
     _mutex.lock();
-    for (int i = 0; i < 50 && !_commands.empty(); ++i) {
+    for (int i = 0; i < 5 && !_commands.empty(); ++i) {
         PlayerCommand* command = _commands.front();
 
         command->handleCommand(data);
@@ -184,7 +185,7 @@ void GstreamerVideoPlayer::mainLoop()
 
     gst_element_set_state(data->source, GST_STATE_PAUSED);
 
-    _timeoutId = g_timeout_add(500, timeout_callback_player, data);
+    _timeoutId = g_timeout_add(100, timeout_callback_player, data);
     std::cout << "Starting main loop..." << std::endl;
     g_main_loop_run(data->loop);
     std::cout << "Main loop finished..." << std::endl;

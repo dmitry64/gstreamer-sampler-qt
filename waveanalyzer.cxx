@@ -295,7 +295,7 @@ bool WaveAnalyzer::decodeBuffer(const WaveAnalyzer::SignalsBuffer& buffer, unsig
         Result = true;
         result = acode;
     }
-    std::cout << "Result:" << std::setw(10) << result << " bits:" << std::bitset<32>(acode) << std::endl;
+    // std::cout << "Result:" << std::setw(10) << result << " bits:" << std::bitset<32>(acode) << std::endl;
     return Result;
 }
 

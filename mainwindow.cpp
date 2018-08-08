@@ -9,6 +9,7 @@
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , _mode(1)
 {
     ui->setupUi(this);
 
@@ -37,8 +38,12 @@ MainWindow::MainWindow(QWidget* parent)
     ui->uiGroupBox->hide();
     ui->registrationLabel->setText(tr("Waiting..."));
     startAllWorkers();
+    // ui->audioWidgetLeft->hide();
+    //  ui->sampleViewerLeft->hide();
 
     switchMode(1);
+    _mode = 1;
+    _lastViewCoord = 1;
 }
 
 MainWindow::~MainWindow()
@@ -67,7 +72,7 @@ void MainWindow::switchMode(int mode)
         QObject::connect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
         ui->modeSwitchButton->setText("Mode: Realtime");
         ui->modeLabel->setText(tr("Realtime"));
-        ui->coordSlider->setEnabled(false);
+        // ui->coordSlider->setEnabled(false);
     } break;
     case 1: {
         QObject::disconnect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
@@ -78,7 +83,7 @@ void MainWindow::switchMode(int mode)
 
         ui->modeSwitchButton->setText("Mode: View");
         ui->modeLabel->setText(tr("View"));
-        ui->coordSlider->setEnabled(true);
+        // ui->coordSlider->setEnabled(true);
 
     } break;
     }
@@ -87,47 +92,111 @@ void MainWindow::switchMode(int mode)
 GstClockTime MainWindow::getTimeAtCoord(unsigned int coord, int arrayIndex)
 {
     CoordVector& currentVector = _coordBuffers.at(arrayIndex);
-    CoordVector::iterator it = currentVector.begin();
-    it = std::lower_bound(currentVector.begin(), currentVector.end(), CoordPair(coord, 0));
+    // CoordVector::iterator it = currentVector.begin();
+    /*it = std::lower_bound(currentVector.begin(), currentVector.end(), CoordPair(coord, 0));
     if (it != currentVector.end()) {
         return it.operator*().time();
+    }*/
+    for (auto it = currentVector.begin(); it != currentVector.end(); ++it) {
+        if (it.operator*().coord() > coord) {
+            if (it != currentVector.begin()) {
+                // auto prevIt = it - 1;
+                // GstClockTime avgTime = prevIt.operator*().time() + (it.operator*().time() - prevIt.operator*().time()) / 2;
+                return it.operator*().time();
+            }
+            else {
+                return it.operator*().time();
+            }
+        }
     }
     return 0;
 }
 
 void MainWindow::setFrameAtCoord(unsigned int coord)
 {
-    GstClockTime leftTime = getTimeAtCoord(coord, 0);
-    GstClockTime rightTime = getTimeAtCoord(coord, 1);
-    playerLeft.showFrameAt(leftTime);
-    playerRight.showFrameAt(rightTime);
+    unsigned int minCoord = 0;
+    unsigned int maxCoord = 0;
+    if (!_coordBuffers.at(0).empty() && !_coordBuffers.at(1).empty()) {
+        maxCoord = std::max(_coordBuffers.at(0).back().coord(), _coordBuffers.at(1).back().coord());
+        minCoord = std::min(_coordBuffers.at(0).front().coord(), _coordBuffers.at(1).front().coord());
+    }
+    else {
+        if (!_coordBuffers.at(0).empty()) {
+            maxCoord = _coordBuffers.at(0).back().coord();
+            minCoord = _coordBuffers.at(0).front().coord();
+        }
+        if (!_coordBuffers.at(1).empty()) {
+            maxCoord = _coordBuffers.at(1).back().coord();
+            minCoord = _coordBuffers.at(1).front().coord();
+        }
+    }
+
+    unsigned int width = maxCoord - minCoord;
+    // unsigned int posCoord = minCoord + ((width / 1000) * position);
+
+    unsigned int sliderPos = (static_cast<double>(coord - minCoord) / static_cast<double>(width)) * 1000.0;
+
+    if (sliderPos <= 950) {
+        ui->coordSlider->setValue(sliderPos);
+        qDebug() << "Setting coord:" << coord;
+        GstClockTime leftTime = getTimeAtCoord(coord, 0);
+        GstClockTime rightTime = getTimeAtCoord(coord, 1);
+        qDebug() << "LEFT TIME:" << leftTime;
+        qDebug() << "RIGHT TIME:" << rightTime;
+
+        playerLeft.showFrameAt(leftTime);
+        playerRight.showFrameAt(rightTime);
+    }
+    else {
+        if (!_coordBuffers.at(0).empty()) {
+            playerLeft.showFrameAt(_coordBuffers.at(0).back().time());
+        }
+        if (!_coordBuffers.at(1).empty()) {
+            playerRight.showFrameAt(_coordBuffers.at(1).back().time());
+        }
+    }
 }
 
 void MainWindow::stopAllWorkers()
 {
-    workerLeft.stopWorker();
-    while (workerLeft.isRunning()) {
-        qApp->processEvents();
+    sync();
+    if (workerLeft.isRunning()) {
+        workerLeft.stopWorker();
+        while (workerLeft.isRunning()) {
+            qApp->processEvents();
+        }
+        qDebug() << "Left worker stopped";
+        QThread::msleep(100);
     }
-    qDebug() << "Left worker stopped";
 
-    workerRight.stopWorker();
-    while (workerRight.isRunning()) {
-        qApp->processEvents();
+    if (workerRight.isRunning()) {
+        workerRight.stopWorker();
+        while (workerRight.isRunning()) {
+            qApp->processEvents();
+        }
+        qDebug() << "Right worker stopped";
+        QThread::msleep(100);
     }
-    qDebug() << "Right worker stopped";
 
-    playerLeft.stopWorker();
-    while (playerLeft.isRunning()) {
-        qApp->processEvents();
+    if (playerLeft.isRunning()) {
+        playerLeft.stopWorker();
+        while (playerLeft.isRunning()) {
+            qApp->processEvents();
+        }
+        qDebug() << "Left player stopped";
+        QThread::msleep(100);
     }
-    qDebug() << "Left player stopped";
 
-    playerRight.stopWorker();
-    while (playerRight.isRunning()) {
-        qApp->processEvents();
+    if (playerRight.isRunning()) {
+        playerRight.stopWorker();
+        while (playerRight.isRunning()) {
+            qApp->processEvents();
+        }
+        qDebug() << "Right player stopped";
+        QThread::msleep(100);
     }
-    qDebug() << "Right player stopped";
+    QThread::msleep(1000);
+    sync();
 }
 
 void MainWindow::startAllWorkers()
@@ -186,13 +255,35 @@ void MainWindow::onNumberDecodedLeft(unsigned int number)
 
 void MainWindow::onNewCoord(unsigned int coord, GstClockTime time, int cameraIndex)
 {
+    if (!_coordBuffers.at(cameraIndex).empty()) {
+        if (coord < _coordBuffers.at(cameraIndex).back().coord()) {
+            _coordBuffers.at(0).clear();
+            _coordBuffers.at(1).clear();
+        }
+    }
+
     _coordBuffers.at(cameraIndex).emplace_back(coord, time);
-    if (!_coordBuffers.at(0).empty() && !_coordBuffers.at(1).empty()) {
-        unsigned int maxCoord = std::max(_coordBuffers.at(0).back().coord(), _coordBuffers.at(1).back().coord());
-        ui->coordSlider->setMaximum(maxCoord);
+
+    ui->coordCountLabelLeft->setText(QString::number(_coordBuffers.at(0).size()));
+    ui->coordCountLabelRight->setText(QString::number(_coordBuffers.at(1).size()));
+
+
+    if (!_coordBuffers.at(0).empty()) {
+        ui->firstCoordLabelLeft->setText(QString::number(_coordBuffers.at(0).front().coord()));
+        ui->lastCoordLabelLeft->setText(QString::number(_coordBuffers.at(0).back().coord()));
     }
     else {
-        ui->coordSlider->setMinimum(coord);
+        ui->firstCoordLabelLeft->setText("---");
+        ui->lastCoordLabelLeft->setText("---");
+    }
+
+    if (!_coordBuffers.at(1).empty()) {
+        ui->firstCoordLabelRight->setText(QString::number(_coordBuffers.at(1).front().coord()));
+        ui->lastCoordLabelRight->setText(QString::number(_coordBuffers.at(1).back().coord()));
+    }
+    else {
+        ui->firstCoordLabelRight->setText("---");
+        ui->lastCoordLabelRight->setText("---");
     }
 }
 
@@ -226,14 +317,13 @@ void MainWindow::on_seekButton_released()
 
 void MainWindow::on_modeSwitchButton_released()
 {
-    static int mode = 1;
-    if (mode == 0) {
-        mode = 1;
+    if (_mode == 0) {
+        _mode = 1;
     }
     else {
-        mode = 0;
+        _mode = 0;
     }
-    switchMode(mode);
+    switchMode(_mode);
 }
 
 unsigned int CoordPair::coord() const
@@ -248,14 +338,40 @@ GstClockTime CoordPair::time() const
 
 void MainWindow::on_coordSlider_sliderMoved(int position)
 {
-    setFrameAtCoord(position);
+    qDebug() << "SLIDER COORD:" << position;
+    unsigned int maxCoord = 0;
+    unsigned int minCoord = 0;
+
+    if (!_coordBuffers.at(0).empty() && !_coordBuffers.at(1).empty()) {
+        maxCoord = std::max(_coordBuffers.at(0).back().coord(), _coordBuffers.at(1).back().coord());
+        minCoord = std::min(_coordBuffers.at(0).front().coord(), _coordBuffers.at(1).front().coord());
+    }
+    else {
+        if (!_coordBuffers.at(0).empty()) {
+            maxCoord = _coordBuffers.at(0).back().coord();
+            minCoord = _coordBuffers.at(0).front().coord();
+        }
+        if (!_coordBuffers.at(1).empty()) {
+            maxCoord = _coordBuffers.at(1).back().coord();
+            minCoord = _coordBuffers.at(1).front().coord();
+        }
+    }
+
+    unsigned int width = maxCoord - minCoord;
+    unsigned int posCoord = minCoord + ((width / 1000) * position);
+    _lastViewCoord = posCoord;
+
+    setFrameAtCoord(posCoord);
 }
 
 void MainWindow::onRegistrationStart(QString name)
 {
+    sync();
+    QThread::msleep(1000);
     _currentRegistrationName = name;
     stopAllWorkers();
     QString path = restoreDefaultVideoFolder() + "/" + name;
+
     QDir dir;
     dir.mkpath(path);
 
@@ -266,6 +382,7 @@ void MainWindow::onRegistrationStart(QString name)
     _coordBuffers.at(0).clear();
     _coordBuffers.at(1).clear();
 
+    QThread::msleep(100);
     startAllWorkers();
     ui->registrationLabel->setText(tr("Recording..."));
     ui->registrationNameLabel->setText(name);
@@ -282,17 +399,26 @@ void MainWindow::onRegistrationStop()
 
 void MainWindow::onViewMode()
 {
-    switchMode(1);
+    if (_mode != 1) {
+        switchMode(1);
+        _mode = 1;
+    }
 }
 
 void MainWindow::onRealtimeMode()
 {
-    switchMode(0);
+    if (_mode != 0) {
+        switchMode(0);
+        _mode = 0;
+    }
 }
 
 void MainWindow::onSetCoord(unsigned int coord)
 {
-    setFrameAtCoord(coord);
+    if (coord != _lastViewCoord) {
+        setFrameAtCoord(coord);
+    }
+    _lastViewCoord = coord;
 }
 
 void MainWindow::on_startRegistrationButton_released()
