@@ -11,8 +11,6 @@ AudioVisualizer::AudioVisualizer(QWidget* parent)
 {
     _maxHeight = 1.0f;
     _pause = false;
-
-    _counter = 0;
 }
 
 AudioVisualizer::~AudioVisualizer() {}
