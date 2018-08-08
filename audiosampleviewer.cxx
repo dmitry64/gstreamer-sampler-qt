@@ -9,6 +9,7 @@ AudioSampleViewer::AudioSampleViewer(QWidget* parent)
     , ui(new Ui::AudioSampleViewer)
 {
     ui->setupUi(this);
+    _pause = false;
 }
 
 AudioSampleViewer::~AudioSampleViewer()
@@ -18,8 +19,15 @@ AudioSampleViewer::~AudioSampleViewer()
 
 void AudioSampleViewer::drawSample(QSharedPointer<std::vector<signed short>> samples)
 {
-    _currentSamples = samples.operator*();
+    if (!_pause) {
+        _currentSamples = samples.operator*();
+    }
     update();
+}
+
+void AudioSampleViewer::pause()
+{
+    _pause = !_pause;
 }
 
 void AudioSampleViewer::paintEvent(QPaintEvent* event)

@@ -13,11 +13,14 @@ class AudioSampleViewer : public QWidget
 {
     Q_OBJECT
 
+    bool _pause;
+
 public:
     explicit AudioSampleViewer(QWidget* parent = 0);
     ~AudioSampleViewer();
     std::vector<signed short> _currentSamples;
     void drawSample(QSharedPointer<std::vector<signed short>> samples);
+    void pause();
 
 protected:
     void paintEvent(QPaintEvent* event);
