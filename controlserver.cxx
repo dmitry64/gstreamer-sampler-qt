@@ -28,10 +28,13 @@ void ControlServer::parseMessage()
         if ((_currentArray.size()) >= (messageSize + VIDEO_PROTOCOL::HEADER_SIZE)) {
             switch (messageId) {
             case VIDEO_PROTOCOL::MESSAGE_TYPE_START_REG: {
+                std::cout << "START REG: " << static_cast<int>(messageSize) << std::endl;
                 QByteArray stringArray(messageSize, 0x00);
+
                 for (int i = 0; i < messageSize; ++i) {
                     stringArray[i] = _currentArray.at(i + VIDEO_PROTOCOL::HEADER_SIZE);
                 }
+
 
                 onMessageStartReg(QString(stringArray));
             } break;
