@@ -71,6 +71,8 @@ private slots:
 
     void on_hideUiButton_released();
 
+    void on_coordSlider_sliderReleased();
+
 public slots:
     void onSampleLeft(QSharedPointer<std::vector<signed short>> samples);
     void onSampleRight(QSharedPointer<std::vector<signed short>> samples);
