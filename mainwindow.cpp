@@ -13,6 +13,11 @@ MainWindow::MainWindow(QWidget* parent)
 {
     ui->setupUi(this);
 
+    workerLeft.setObjectName("WorkerLeft");
+    workerRight.setObjectName("WorkerRight");
+    playerLeft.setObjectName("PlayerLeft");
+    playerRight.setObjectName("PlayerRight");
+
     QObject::connect(&workerLeft, &GstreamerThreadWorker::sampleReady, this, &MainWindow::onSampleLeft);
     QObject::connect(&workerLeft, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCutLeft);
     QObject::connect(&workerLeft, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNewCoord);
@@ -72,7 +77,7 @@ void MainWindow::switchMode(int mode)
         QObject::connect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
         ui->modeSwitchButton->setText("Mode: Realtime");
         ui->modeLabel->setText(tr("Realtime"));
-        // ui->coordSlider->setEnabled(false);
+        ui->coordSlider->setEnabled(false);
     } break;
     case 1: {
         QObject::disconnect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
@@ -83,7 +88,7 @@ void MainWindow::switchMode(int mode)
 
         ui->modeSwitchButton->setText("Mode: View");
         ui->modeLabel->setText(tr("View"));
-        // ui->coordSlider->setEnabled(true);
+        ui->coordSlider->setEnabled(true);
 
     } break;
     }
@@ -114,29 +119,19 @@ GstClockTime MainWindow::getTimeAtCoord(unsigned int coord, int arrayIndex)
 
 void MainWindow::setFrameAtCoord(unsigned int coord)
 {
-    unsigned int minCoord = 0;
-    unsigned int maxCoord = 0;
-    if (!_coordBuffers.at(0).empty() && !_coordBuffers.at(1).empty()) {
-        maxCoord = std::max(_coordBuffers.at(0).back().coord(), _coordBuffers.at(1).back().coord());
-        minCoord = std::min(_coordBuffers.at(0).front().coord(), _coordBuffers.at(1).front().coord());
-    }
-    else {
-        if (!_coordBuffers.at(0).empty()) {
-            maxCoord = _coordBuffers.at(0).back().coord();
-            minCoord = _coordBuffers.at(0).front().coord();
-        }
-        if (!_coordBuffers.at(1).empty()) {
-            maxCoord = _coordBuffers.at(1).back().coord();
-            minCoord = _coordBuffers.at(1).front().coord();
-        }
-    }
+    std::pair<unsigned int, unsigned int> minmax = getMinMaxCoords();
+    unsigned int minCoord = minmax.first;
+    unsigned int maxCoord = minmax.second;
+
 
     unsigned int width = maxCoord - minCoord;
-    // unsigned int posCoord = minCoord + ((width / 1000) * position);
-
-    unsigned int sliderPos = (static_cast<double>(coord - minCoord) / static_cast<double>(width)) * 1000.0;
-
-    // if (sliderPos <= 950) {
+    unsigned int sliderPos = 0;
+    if (coord < minCoord) {
+        sliderPos = 0;
+    }
+    else {
+        sliderPos = (static_cast<double>(coord - minCoord) / static_cast<double>(width)) * 1000.0;
+    }
     ui->coordSlider->setValue(sliderPos);
     qDebug() << "Setting coord:" << coord;
     GstClockTime leftTime = getTimeAtCoord(coord, 0);
@@ -146,15 +141,6 @@ void MainWindow::setFrameAtCoord(unsigned int coord)
 
     playerLeft.showFrameAt(leftTime);
     playerRight.showFrameAt(rightTime);
-    /*  }
-      else {
-          if (!_coordBuffers.at(0).empty()) {
-              playerLeft.showFrameAt(_coordBuffers.at(0).back().time());
-          }
-          if (!_coordBuffers.at(1).empty()) {
-              playerRight.showFrameAt(_coordBuffers.at(1).back().time());
-          }
-      }*/
 }
 
 void MainWindow::stopAllWorkers()
@@ -210,6 +196,47 @@ void MainWindow::startAllWorkers()
     sync();
     playerLeft.start();
     playerRight.start();
+}
+
+std::pair<unsigned int, unsigned int> MainWindow::getMinMaxCoords()
+{
+    unsigned int maxCoord = 0;
+    unsigned int minCoord = 0;
+
+    if (!_coordBuffers.at(0).empty() && !_coordBuffers.at(1).empty()) {
+        maxCoord = std::max(_coordBuffers.at(0).back().coord(), _coordBuffers.at(1).back().coord());
+        minCoord = std::min(_coordBuffers.at(0).front().coord(), _coordBuffers.at(1).front().coord());
+    }
+    else {
+        if (!_coordBuffers.at(0).empty()) {
+            maxCoord = _coordBuffers.at(0).back().coord();
+            minCoord = _coordBuffers.at(0).front().coord();
+        }
+        if (!_coordBuffers.at(1).empty()) {
+            maxCoord = _coordBuffers.at(1).back().coord();
+            minCoord = _coordBuffers.at(1).front().coord();
+        }
+    }
+
+    return std::pair<unsigned int, unsigned int>(minCoord, maxCoord);
+}
+
+void MainWindow::updateSliderRange()
+{
+    std::pair<unsigned int, unsigned int> minmax = getMinMaxCoords();
+    unsigned int minCoord = minmax.first;
+    unsigned int maxCoord = minmax.second;
+
+    unsigned int width = maxCoord - minCoord;
+
+    unsigned int sliderPos = 0;
+    if (_lastViewCoord < minCoord) {
+        sliderPos = 0;
+    }
+    else {
+        sliderPos = (static_cast<double>(_lastViewCoord - minCoord) / static_cast<double>(width)) * 1000.0;
+    }
+    ui->coordSlider->setValue(sliderPos);
 }
 
 void MainWindow::onSampleLeft(QSharedPointer<std::vector<signed short>> samples)
@@ -285,6 +312,11 @@ void MainWindow::onNewCoord(unsigned int coord, GstClockTime time, int cameraInd
         ui->firstCoordLabelRight->setText("---");
         ui->lastCoordLabelRight->setText("---");
     }
+
+    if (_coordBuffers.at(cameraIndex).size() % 100 == 0) {
+        updateSliderRange();
+    }
+    sync();
 }
 
 void MainWindow::onClientConnected()
@@ -420,23 +452,9 @@ void MainWindow::on_hideUiButton_released()
 
 void MainWindow::on_coordSlider_sliderReleased()
 {
-    unsigned int maxCoord = 0;
-    unsigned int minCoord = 0;
-
-    if (!_coordBuffers.at(0).empty() && !_coordBuffers.at(1).empty()) {
-        maxCoord = std::max(_coordBuffers.at(0).back().coord(), _coordBuffers.at(1).back().coord());
-        minCoord = std::min(_coordBuffers.at(0).front().coord(), _coordBuffers.at(1).front().coord());
-    }
-    else {
-        if (!_coordBuffers.at(0).empty()) {
-            maxCoord = _coordBuffers.at(0).back().coord();
-            minCoord = _coordBuffers.at(0).front().coord();
-        }
-        if (!_coordBuffers.at(1).empty()) {
-            maxCoord = _coordBuffers.at(1).back().coord();
-            minCoord = _coordBuffers.at(1).front().coord();
-        }
-    }
+    std::pair<unsigned int, unsigned int> minmax = getMinMaxCoords();
+    unsigned int minCoord = minmax.first;
+    unsigned int maxCoord = minmax.second;
 
     unsigned int width = maxCoord - minCoord;
     unsigned int posCoord = minCoord + ((width / 1000) * ui->coordSlider->value());

@@ -52,6 +52,8 @@ private:
     void setFrameAtCoord(unsigned int coord);
     void stopAllWorkers();
     void startAllWorkers();
+    std::pair<unsigned int, unsigned int> getMinMaxCoords();
+    void updateSliderRange();
 private slots:
     void on_audioPauseButton_released();
     void on_seekButton_released();
