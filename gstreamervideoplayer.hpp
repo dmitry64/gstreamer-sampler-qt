@@ -65,9 +65,11 @@ public:
     void setCameraType(const CameraType& cameraType);
     void setRegistrationFileName(const QString& path, const QString& name);
 
+    void sendLoadingFrame(bool status);
 signals:
     void frameReady(QSharedPointer<std::vector<unsigned char>> frame);
     void statusChanged(bool status);
+    void loadingFrame(bool status);
     void finished();
 };
 
