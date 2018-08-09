@@ -123,16 +123,6 @@ void MainWindow::setFrameAtCoord(unsigned int coord)
     unsigned int minCoord = minmax.first;
     unsigned int maxCoord = minmax.second;
 
-
-    unsigned int width = maxCoord - minCoord;
-    unsigned int sliderPos = 0;
-    if (coord < minCoord) {
-        sliderPos = 0;
-    }
-    else {
-        sliderPos = (static_cast<double>(coord - minCoord) / static_cast<double>(width)) * 1000.0;
-    }
-    ui->coordSlider->setValue(sliderPos);
     qDebug() << "Setting coord:" << coord;
     GstClockTime leftTime = getTimeAtCoord(coord, 0);
     GstClockTime rightTime = getTimeAtCoord(coord, 1);
@@ -237,6 +227,33 @@ void MainWindow::updateSliderRange()
         sliderPos = (static_cast<double>(_lastViewCoord - minCoord) / static_cast<double>(width)) * 1000.0;
     }
     ui->coordSlider->setValue(sliderPos);
+}
+
+void MainWindow::setFrameBySlider(int sliderPos)
+{
+    sync();
+    std::pair<unsigned int, unsigned int> minmax = getMinMaxCoords();
+    unsigned int minCoord = minmax.first;
+    unsigned int maxCoord = minmax.second;
+
+    unsigned int width = maxCoord - minCoord;
+    unsigned int posCoord = minCoord + ((width / 1000) * sliderPos);
+    _lastViewCoord = posCoord;
+
+    setFrameAtCoord(posCoord);
+}
+
+void MainWindow::setFrameByTimeSlider(int timeSliderPos)
+{
+    sync();
+    GstClockTime maxTime = playerLeft.getTotalDuration();
+    GstClockTime minTime = 0;
+
+    GstClockTime width = maxTime - minTime;
+    GstClockTime posCoord = minTime + ((width / 1000) * timeSliderPos);
+
+    playerLeft.showFrameAt(posCoord);
+    playerRight.showFrameAt(posCoord);
 }
 
 void MainWindow::onSampleLeft(QSharedPointer<std::vector<signed short>> samples)
@@ -371,6 +388,7 @@ GstClockTime CoordPair::time() const
 void MainWindow::on_coordSlider_sliderMoved(int position)
 {
     qDebug() << "SLIDER COORD:" << position;
+    setFrameBySlider(position);
 }
 
 void MainWindow::onRegistrationStart(QString name)
@@ -450,15 +468,9 @@ void MainWindow::on_hideUiButton_released()
     }
 }
 
-void MainWindow::on_coordSlider_sliderReleased()
+void MainWindow::on_coordSlider_sliderReleased() {}
+
+void MainWindow::on_timeSlider_sliderMoved(int position)
 {
-    std::pair<unsigned int, unsigned int> minmax = getMinMaxCoords();
-    unsigned int minCoord = minmax.first;
-    unsigned int maxCoord = minmax.second;
-
-    unsigned int width = maxCoord - minCoord;
-    unsigned int posCoord = minCoord + ((width / 1000) * ui->coordSlider->value());
-    _lastViewCoord = posCoord;
-
-    setFrameAtCoord(posCoord);
+    setFrameByTimeSlider(position);
 }

@@ -17,14 +17,11 @@
 #include <QThread>
 #include <QSharedPointer>
 
-#include "commands.h"
-
 class GstreamerVideoPlayer;
 
 class PlayerProgramData
 {
 public:
-    GMainLoop* loop;
     GstElement* source;
     GstreamerVideoPlayer* worker;
 };
@@ -41,8 +38,9 @@ public:
     };
 
 private:
+    PlayerProgramData* _data;
     std::mutex _mutex;
-    std::queue<PlayerCommand*> _commands;
+
     CameraType _cameraType;
     guint _timeoutId;
     QString _currentFileName;
@@ -52,11 +50,9 @@ private:
     void mainLoop();
 
 public:
-    void handleCommands(PlayerProgramData* data);
     void stopWorker();
     void playStream();
     void showFrameAt(GstClockTime time);
-    void stopHandlerTimeout();
 
 public:
     explicit GstreamerVideoPlayer(QObject* parent = nullptr);
@@ -66,6 +62,7 @@ public:
     void setRegistrationFileName(const QString& path, const QString& name);
 
     void sendLoadingFrame(bool status);
+    gint64 getTotalDuration();
 signals:
     void frameReady(QSharedPointer<std::vector<unsigned char>> frame);
     void statusChanged(bool status);

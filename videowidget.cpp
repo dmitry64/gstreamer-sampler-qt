@@ -45,8 +45,8 @@ void VideoWidget::paintEvent(QPaintEvent* event)
             frameList.pop_front();
         }
     }
-    /*if (frameList.size() > 1) {
+    if (frameList.size() > 1) {
         update();
-    }*/
-    update();
+    }
+    // update();
 }

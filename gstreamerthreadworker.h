@@ -17,7 +17,6 @@
 #include <QThread>
 #include <QSharedPointer>
 
-#include "commands.h"
 #include "waveanalyzer.hpp"
 #include "waveanalyzerthread.hpp"
 
@@ -46,8 +45,6 @@ public:
 private:
     ProgramData* _data;
     std::mutex _mutex;
-    std::queue<WorkerCommand*> _commands;
-
     WaveAnalyzerThread _waveThread;
     CameraType _cameraType;
     guint _timeoutId;

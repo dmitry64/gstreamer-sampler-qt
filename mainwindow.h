@@ -54,6 +54,8 @@ private:
     void startAllWorkers();
     std::pair<unsigned int, unsigned int> getMinMaxCoords();
     void updateSliderRange();
+    void setFrameBySlider(int sliderPos);
+    void setFrameByTimeSlider(int timeSliderPos);
 private slots:
     void on_audioPauseButton_released();
     void on_seekButton_released();
@@ -74,6 +76,8 @@ private slots:
     void on_hideUiButton_released();
 
     void on_coordSlider_sliderReleased();
+
+    void on_timeSlider_sliderMoved(int position);
 
 public slots:
     void onSampleLeft(QSharedPointer<std::vector<signed short>> samples);

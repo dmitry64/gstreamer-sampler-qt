@@ -154,11 +154,15 @@ void GstreamerThreadWorker::mainLoop()
         cameraAddress = restoreRightCameraAddress();
     }
     QString finalPath = currentFilePath + "/" + _currentPath + _currentFileName + QString::number(id);
-    QString launchString = "rtspsrc use-pipeline-clock=true location=" + cameraAddress + " sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! tee name=t ! capsfilter caps=\"video/x-h264\" ! queue ! mpegtsmux ! filesink location=" + finalPath
-                           + ".ts buffer-mode=unbuffered t. ! "
+    QString launchString = "rtspsrc debug=true use-pipeline-clock=true location=" + cameraAddress
+                           + " sync=false name=demux "
+                             "demux. ! rtph264depay ! queue name=videoqueue ! tee name=t ! queue name=filequeue ! mpegtsmux ! filesink location="
+                           + finalPath
+                           + ".ts buffer-mode=unbuffered t. ! queue ! "
                              "decodebin ! videoconvert ! "
                              "videoscale ! video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myworkervideosink "
-                             "caps=\"video/x-raw,format=RGB,width=1280,height=720\" sync=true demux. ! queue ! capsfilter caps=\"application/x-rtp,media=audio\" ! decodebin !"
+                             "caps=\"video/x-raw,format=RGB,width=1280,height=720\" sync=true "
+                             "demux. ! queue name=audioqueue ! decodebin !"
                              "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved ! appsink "
                              "caps=\"audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved\" name=myaudiosink sync=true";
 

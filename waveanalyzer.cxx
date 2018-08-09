@@ -118,6 +118,13 @@ void WaveAnalyzer::analyze()
                 found = false;
             }
             else {
+                if (_buffers.size() > (NEG_FRONT_WINDOW_WIDTH * 8)) {
+                    SignalsBuffer::iterator endIt = _buffers.end() - (NEG_FRONT_WINDOW_WIDTH * 8);
+                    std::vector<GstClockTime>::iterator timeItEnd = _timeBuffers.end() - (NEG_FRONT_WINDOW_WIDTH * 8);
+                    _buffers.erase(_buffers.begin(), endIt);
+                    _timeBuffers.erase(_timeBuffers.begin(), timeItEnd);
+                }
+
                 return;
             }
         }

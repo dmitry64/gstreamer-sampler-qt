@@ -4,23 +4,6 @@
 #include <QApplication>
 #include "settings.h"
 
-gboolean timeout_callback_player(gpointer dataptr)
-{
-    PlayerProgramData* data = (PlayerProgramData*) dataptr;
-    Q_ASSERT(data->source);
-    Q_ASSERT(data->loop);
-    Q_ASSERT(data->worker);
-    data->worker->handleCommands(data);
-    // qApp->processEvents(QEventLoop::AllEvents, 50);
-    /*GstState state;
-    GstState pending;
-    gst_element_get_state(data->source, &state, &pending, 300);
-    std::cout << "STATE:" << state << std::endl;
-*/
-
-    return TRUE;
-}
-
 GstFlowReturn on_new_video_sample_from_sink_player(GstElement* elt, PlayerProgramData* data)
 {
     std::cerr << "FRAME!" << std::endl;
@@ -38,7 +21,7 @@ GstFlowReturn on_new_video_sample_from_sink_player(GstElement* elt, PlayerProgra
     gst_buffer_unmap(buffer, &info);
     gst_sample_unref(sample);
     // gst_element_set_state(data->source, GST_STATE_PAUSED);
-
+    // gst_element_set_state(data->source, GST_STATE_PAUSED);
     return GST_FLOW_FLUSHING;
 }
 
@@ -50,10 +33,12 @@ static gboolean on_source_message_player(GstBus* bus, GstMessage* message, Playe
         break;
     case GST_MESSAGE_ERROR:
         g_print("Received error\n");
-        g_main_loop_quit(data->loop);
         break;
     case GST_MESSAGE_STATE_CHANGED:
-        g_print("State changed\n");
+        std::cout << "================ STATE CHANGED!!!" << std::endl;
+        break;
+    case GST_MESSAGE_ASYNC_DONE:
+        std::cout << "================ ASYNC DONE!" << std::endl;
         break;
     default:
         break;
@@ -109,25 +94,29 @@ void GstreamerVideoPlayer::sendLoadingFrame(bool status)
     emit loadingFrame(status);
 }
 
+gint64 GstreamerVideoPlayer::getTotalDuration()
+{
+    gint64 len;
+    gst_element_query_duration(_data->source, GST_FORMAT_TIME, &len);
+
+    return len;
+}
+
 void GstreamerVideoPlayer::run()
 {
     mainLoop();
+    exec();
+
+    std::cout << "Main loop finished..." << std::endl;
+
+    gst_element_set_state(_data->source, GST_STATE_NULL);
+
+    gst_object_unref(_data->source);
+    g_free(_data);
+
+    std::cout << "GStreamer thread finished..." << std::endl;
+    emit finished();
 }
-
-void GstreamerVideoPlayer::handleCommands(PlayerProgramData* data)
-{
-    _mutex.lock();
-    for (int i = 0; i < 5 && !_commands.empty(); ++i) {
-        PlayerCommand* command = _commands.front();
-
-        command->handleCommand(data);
-
-        delete command;
-        _commands.pop();
-    }
-    _mutex.unlock();
-}
-
 
 GstreamerVideoPlayer::GstreamerVideoPlayer(QObject* parent)
     : QThread(parent)
@@ -143,17 +132,15 @@ void GstreamerVideoPlayer::sendVideoSample(QSharedPointer<std::vector<unsigned c
 
 void GstreamerVideoPlayer::mainLoop()
 {
-    PlayerProgramData* data = NULL;
     GstBus* bus = NULL;
     GstElement* myplayervideosink = NULL;
 
     std::cout << "Initializing..." << std::endl;
     gst_init(0, 0);
 
-    data = g_new0(PlayerProgramData, 1);
-    data->worker = this;
+    _data = g_new0(PlayerProgramData, 1);
+    _data->worker = this;
 
-    data->loop = g_main_loop_new(NULL, FALSE);
     int id = static_cast<int>(_cameraType);
     QString cameraAddress;
     QString currentFilePath = restoreDefaultVideoFolder();
@@ -165,9 +152,12 @@ void GstreamerVideoPlayer::mainLoop()
         cameraAddress = restoreRightCameraAddress();
     }
 
-    QString launchString("filesrc location=" + currentFilePath + "/" + _currentPath + _currentFileName + QString::number(id)
-                         + ".ts ! tsdemux ! capsfilter caps=\"video/x-h264\" ! h264parse ! decodebin ! videoconvert ! "
+    QString launchString("filesrc name=inputfile location=" + currentFilePath + "/" + _currentPath + _currentFileName + QString::number(id)
+                         + ".ts ! tsdemux ! queue ! h264parse ! decodebin ! videoconvert ! videoscale ! videorate ! "
                            "video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myplayervideosink");
+
+    /* QString launchString("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! queue ! h264parse ! avdec_h264 ! videoconvert ! videoscale ! videorate ! "
+                          "video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myplayervideosink");*/
 
     // string = g_strdup_printf
     // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
@@ -175,21 +165,21 @@ void GstreamerVideoPlayer::mainLoop()
     //(,  // filesrc location=file%d.ts use-mmap=false ! tsdemux
     // id);
     std::cout << "Pipeline string: \n" << launchString.toStdString().c_str() << std::endl;  // filesrc location=file%d.ts ! tsparse ! tsdemux
-    data->source = gst_parse_launch(launchString.toStdString().c_str(), NULL);
+    _data->source = gst_parse_launch(launchString.toStdString().c_str(), NULL);
     std::cout << "Created pipeline..." << std::endl;
 
-    if (data->source == NULL) {
+    if (_data->source == NULL) {
         g_print("Bad source\n");
         return;
     }
 
-    bus = gst_element_get_bus(data->source);
-    gst_bus_add_watch(bus, (GstBusFunc) on_source_message_player, data);
+    bus = gst_element_get_bus(_data->source);
+    gst_bus_add_watch(bus, (GstBusFunc) on_source_message_player, _data);
     gst_object_unref(bus);
 
-    myplayervideosink = gst_bin_get_by_name(GST_BIN(data->source), "myplayervideosink");
+    myplayervideosink = gst_bin_get_by_name(GST_BIN(_data->source), "myplayervideosink");
     g_object_set(G_OBJECT(myplayervideosink), "emit-signals", TRUE, "sync", FALSE, NULL);
-    g_signal_connect(myplayervideosink, "new-sample", G_CALLBACK(on_new_video_sample_from_sink_player), data);
+    g_signal_connect(myplayervideosink, "new-sample", G_CALLBACK(on_new_video_sample_from_sink_player), _data);
     gst_object_unref(myplayervideosink);
 
     std::cout << "Player video sink ready..." << std::endl;
@@ -197,53 +187,34 @@ void GstreamerVideoPlayer::mainLoop()
     GstPad* appsinkPad = gst_element_get_static_pad(GST_ELEMENT(myplayervideosink), "sink");
     gst_pad_set_event_function(appsinkPad, gst_my_filter_sink_event_player);
 
-    gst_element_set_state(data->source, GST_STATE_PAUSED);
+    gst_element_set_state(_data->source, GST_STATE_PAUSED);
+    // gst_element_set_state(_data->source, GST_STATE_PLAYING);
 
-    _timeoutId = g_timeout_add(256, timeout_callback_player, data);
     std::cout << "Starting main loop..." << std::endl;
-    g_main_loop_run(data->loop);
-    std::cout << "Main loop finished..." << std::endl;
-
-    gst_element_set_state(data->source, GST_STATE_NULL);
-
-    gst_object_unref(data->source);
-    g_main_loop_unref(data->loop);
-    g_free(data);
-
-    std::cout << "GStreamer thread finished..." << std::endl;
-    emit finished();
 }
 
 void GstreamerVideoPlayer::stopWorker()
 {
     std::cout << "Stop player" << std::endl;
-    PlayerStopCommand* command = new PlayerStopCommand();
-    _mutex.lock();
-    _commands.push(command);
-    _mutex.unlock();
-}
-
-void GstreamerVideoPlayer::playStream()
-{
-    std::cout << "Play player" << std::endl;
-    PlayerPlayCommand* command = new PlayerPlayCommand();
-    _mutex.lock();
-    _commands.push(command);
-    _mutex.unlock();
+    QThread::exit(0);
 }
 
 void GstreamerVideoPlayer::showFrameAt(GstClockTime time)
 {
-    PlayerSeekCommand* command = new PlayerSeekCommand(time);
-    _mutex.lock();
-    _commands.push(command);
-    _mutex.unlock();
-}
-
-void GstreamerVideoPlayer::stopHandlerTimeout()
-{
-    if (_timeoutId) {
-        g_source_remove(_timeoutId);
-        _timeoutId = 0;
+    std::cout << "POS:" << time / 1000.0f / 1000.0f / 1000.0f << "s" << std::endl;
+    sync();
+    gint64 len;
+    gst_element_query_duration(_data->source, GST_FORMAT_TIME, &len);
+    std::cout << "DURA:" << len << std::endl;
+    if (len <= time) {
+        std::cerr << "=================== NOT ENOUGH DATA!!!!!" << std::endl;
+        return;
     }
+    //
+    gst_element_set_state(_data->source, GST_STATE_PLAYING);
+    std::cout << "SEEK:" << time << std::endl;
+
+    GstEvent* event = gst_event_new_seek(1.0, GST_FORMAT_TIME, static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_SKIP), GST_SEEK_TYPE_SET, time, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
+
+    gst_element_send_event(_data->source, event);
 }
