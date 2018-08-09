@@ -4,13 +4,6 @@
 #include <QApplication>
 #include "settings.h"
 
-gboolean worker_timeout_callback(gpointer dataptr)
-{
-    ProgramData* data = (ProgramData*) dataptr;
-    data->worker->handleCommands(data);
-    return TRUE;
-}
-
 GstFlowReturn on_worker_new_audio_sample_from_sink(GstElement* elt, ProgramData* data)
 {
     GstSample* sample;
@@ -60,7 +53,7 @@ static gboolean on_worker_source_message(GstBus* bus, GstMessage* message, Progr
         break;
     case GST_MESSAGE_ERROR:
         g_print("Received error\n");
-        g_main_loop_quit(data->loop);
+        // g_main_loop_quit(data->loop);
         break;
     default:
         break;
@@ -87,29 +80,17 @@ void GstreamerThreadWorker::setCameraType(const CameraType& cameraType)
     _cameraType = cameraType;
 }
 
-void GstreamerThreadWorker::stopHandlerTimeout()
-{
-    if (_timeoutId) {
-        g_source_remove(_timeoutId);
-        _timeoutId = 0;
-    }
-}
-
 void GstreamerThreadWorker::run()
 {
     mainLoop();
-}
+    exec();
+    std::cout << "Worker Main loop finished..." << std::endl;
 
-void GstreamerThreadWorker::handleCommands(ProgramData* data)
-{
-    _mutex.lock();
-    for (int i = 0; i < 10 && !_commands.empty(); ++i) {
-        WorkerCommand* command = _commands.front();
-        command->handleCommand(data);
-        delete command;
-        _commands.pop();
-    }
-    _mutex.unlock();
+    gst_element_set_state(_data->source, GST_STATE_NULL);
+    gst_object_unref(_data->source);
+    g_free(_data);
+    std::cout << "Worker GStreamer thread finished..." << std::endl;
+    emit finished();
 }
 
 void GstreamerThreadWorker::addSampleAndTimestamp(QSharedPointer<std::vector<signed short>> samples, GstClockTime time, GstClockTime duration)
@@ -151,7 +132,6 @@ void GstreamerThreadWorker::sendVideoSample(QSharedPointer<std::vector<unsigned 
 
 void GstreamerThreadWorker::mainLoop()
 {
-    ProgramData* data = NULL;
     GstBus* bus = NULL;
     GstElement* myaudiosink = NULL;
     GstElement* myworkervideosink = NULL;
@@ -159,10 +139,8 @@ void GstreamerThreadWorker::mainLoop()
     std::cout << "Initializing worker..." << std::endl;
     gst_init(0, 0);
 
-    data = g_new0(ProgramData, 1);
-    data->worker = this;
-
-    data->loop = g_main_loop_new(NULL, FALSE);
+    _data = g_new0(ProgramData, 1);
+    _data->worker = this;
 
     int id = static_cast<int>(_cameraType);
 
@@ -176,8 +154,8 @@ void GstreamerThreadWorker::mainLoop()
         cameraAddress = restoreRightCameraAddress();
     }
     QString finalPath = currentFilePath + "/" + _currentPath + _currentFileName + QString::number(id);
-    QString launchString = "rtspsrc location=" + cameraAddress + " sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! h264parse ! tee name=t ! capsfilter caps=\"video/x-h264\" ! queue ! mpegtsmux ! filesink location=" + finalPath
-                           + ".ts buffer-mode=full t. ! "
+    QString launchString = "rtspsrc use-pipeline-clock=true location=" + cameraAddress + " sync=true name=demux demux. ! queue ! capsfilter caps=\"application/x-rtp,media=video\" ! rtph264depay ! tee name=t ! capsfilter caps=\"video/x-h264\" ! queue ! mpegtsmux ! filesink location=" + finalPath
+                           + ".ts buffer-mode=unbuffered t. ! "
                              "decodebin ! videoconvert ! "
                              "videoscale ! video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myworkervideosink "
                              "caps=\"video/x-raw,format=RGB,width=1280,height=720\" sync=true demux. ! queue ! capsfilter caps=\"application/x-rtp,media=audio\" ! decodebin !"
@@ -189,29 +167,29 @@ void GstreamerThreadWorker::mainLoop()
     // ("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! h264parse ! avdec_h264 ! videorate ! videoconvert ! videoscale ! video/x-raw,format=RGB16,width=640,height=480 ! appsink name=myworkervideosink sync=true");
     //    ();
     std::cerr << "Pipeline string: \n" << launchString.toStdString() << std::endl;
-    data->source = gst_parse_launch(launchString.toStdString().c_str(), NULL);
+    _data->source = gst_parse_launch(launchString.toStdString().c_str(), NULL);
 
     std::cerr << "Created worker pipeline..." << std::endl;
 
-    if (data->source == NULL) {
+    if (_data->source == NULL) {
         g_print("Bad source\n");
         return;
     }
 
-    bus = gst_element_get_bus(data->source);
-    gst_bus_add_watch(bus, (GstBusFunc) on_worker_source_message, data);
+    bus = gst_element_get_bus(_data->source);
+    gst_bus_add_watch(bus, (GstBusFunc) on_worker_source_message, _data);
     gst_object_unref(bus);
 
-    myaudiosink = gst_bin_get_by_name(GST_BIN(data->source), "myaudiosink");
+    myaudiosink = gst_bin_get_by_name(GST_BIN(_data->source), "myaudiosink");
     g_object_set(G_OBJECT(myaudiosink), "emit-signals", TRUE, "sync", TRUE, NULL);
-    g_signal_connect(myaudiosink, "new-sample", G_CALLBACK(on_worker_new_audio_sample_from_sink), data);
+    g_signal_connect(myaudiosink, "new-sample", G_CALLBACK(on_worker_new_audio_sample_from_sink), _data);
     gst_object_unref(myaudiosink);
 
     std::cout << "Worker audio sink ready..." << std::endl;
 
-    myworkervideosink = gst_bin_get_by_name(GST_BIN(data->source), "myworkervideosink");
+    myworkervideosink = gst_bin_get_by_name(GST_BIN(_data->source), "myworkervideosink");
     g_object_set(G_OBJECT(myworkervideosink), "emit-signals", TRUE, "sync", TRUE, NULL);
-    g_signal_connect(myworkervideosink, "new-sample", G_CALLBACK(on_worker_new_video_sample_from_sink), data);
+    g_signal_connect(myworkervideosink, "new-sample", G_CALLBACK(on_worker_new_video_sample_from_sink), _data);
     gst_object_unref(myworkervideosink);
 
     std::cout << "Worker video sink ready..." << std::endl;
@@ -219,31 +197,17 @@ void GstreamerThreadWorker::mainLoop()
     GstPad* appsinkPad = gst_element_get_static_pad(GST_ELEMENT(myworkervideosink), "sink");
     gst_pad_set_event_function(appsinkPad, gst_worker_my_filter_sink_event_worker);
 
-    gst_element_set_state(data->source, GST_STATE_PLAYING);
+    gst_element_set_state(_data->source, GST_STATE_PLAYING);
 
     _waveThread.startAnalysys(finalPath);
-    _timeoutId = g_timeout_add(100, worker_timeout_callback, data);
+
     std::cout << "Starting worker main loop..." << std::endl;
-    g_main_loop_run(data->loop);
-    std::cout << "Worker Main loop finished..." << std::endl;
-
-    gst_element_set_state(data->source, GST_STATE_NULL);
-
-    gst_object_unref(data->source);
-    g_main_loop_unref(data->loop);
-    g_free(data);
-
-    std::cout << "Worker GStreamer thread finished..." << std::endl;
-    emit finished();
 }
 
 void GstreamerThreadWorker::stopWorker()
 {
     std::cout << "Stop worker" << std::endl;
-    WorkerStopCommand* command = new WorkerStopCommand();
-    _mutex.lock();
-    _commands.push(command);
-    _mutex.unlock();
+    QThread::exit(0);
 }
 
 void GstreamerThreadWorker::setRegistrationFileName(const QString& path, const QString& name)

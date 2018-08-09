@@ -23,14 +23,6 @@ public:
     virtual void handleCommand(PlayerProgramData* data) = 0;
 };
 
-
-class WorkerStopCommand : public WorkerCommand
-{
-public:
-    WorkerStopCommand() {}
-    void handleCommand(ProgramData* data);
-};
-
 class PlayerSeekCommand : public PlayerCommand
 {
     GstClockTime _pos;

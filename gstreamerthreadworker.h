@@ -26,7 +26,7 @@ class GstreamerThreadWorker;
 class ProgramData
 {
 public:
-    GMainLoop* loop;
+    // GMainLoop* loop;
     GstElement* source;
     // GstElement* audiosink;
     GstreamerThreadWorker* worker;
@@ -44,6 +44,7 @@ public:
     };
 
 private:
+    ProgramData* _data;
     std::mutex _mutex;
     std::queue<WorkerCommand*> _commands;
 
@@ -56,7 +57,6 @@ private:
     void mainLoop();
 
 public:
-    void handleCommands(ProgramData* data);
     void addSampleAndTimestamp(QSharedPointer<std::vector<signed short>> samples, GstClockTime time, GstClockTime duration);
     void sendSignalBuffers();
     void stopWorker();
@@ -68,7 +68,6 @@ public:
     void sendAudioSample(QSharedPointer<std::vector<signed short>> samples);
     void sendVideoSample(QSharedPointer<std::vector<unsigned char>> frame);
     void setCameraType(const CameraType& cameraType);
-    void stopHandlerTimeout();
 
 signals:
     void sampleReady(QSharedPointer<std::vector<signed short>> samples);
