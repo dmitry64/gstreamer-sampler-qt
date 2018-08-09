@@ -4,7 +4,7 @@
 #include <QPainter>
 #include <QDebug>
 
-const int samplesSize = 4;
+const int samplesSize = 2;
 
 AudioVisualizer::AudioVisualizer(QWidget* parent)
     : QWidget(parent)
