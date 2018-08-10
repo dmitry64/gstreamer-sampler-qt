@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
     qRegisterMetaType<QSharedPointer<std::vector<signed short>>>("QSharedPointer<std::vector<signed short>>");
     qRegisterMetaType<QSharedPointer<std::vector<unsigned char>>>("QSharedPointer<std::vector<unsigned char>>");
     MainWindow w;
-    w.show();
+    w.showMaximized();
 
     int ret = a.exec();
 
