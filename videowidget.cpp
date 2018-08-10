@@ -14,7 +14,7 @@ VideoWidget::~VideoWidget() {}
 
 void VideoWidget::drawFrame(QSharedPointer<std::vector<unsigned char>> frame)
 {
-    qDebug() << "DRAW FRAME!";
+    // qDebug() << "DRAW FRAME!";
     if (frameList.size() > 60) {
         frameList.pop_front();
         qDebug() << "DROP FRAME!";
