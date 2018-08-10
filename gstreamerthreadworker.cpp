@@ -154,17 +154,17 @@ void GstreamerThreadWorker::mainLoop()
         cameraAddress = restoreRightCameraAddress();
     }
     QString finalPath = currentFilePath + "/" + _currentPath + _currentFileName + QString::number(id);
-    QString launchString = "rtspsrc debug=true use-pipeline-clock=true location=" + cameraAddress
+    QString launchString = "rtspsrc debug=true udp-buffer-size=500000000 timeout=50000000 latency=4000 buffer-mode=0 location=" + cameraAddress
                            + " sync=false name=demux "
-                             "demux. ! rtph264depay ! queue name=videoqueue ! tee name=t ! queue name=filequeue ! mpegtsmux ! filesink location="
+                             "demux. ! rtph264depay ! queue name=videoqueue ! tee name=t ! queue name=filequeue ! mpegtsmux ! queue ! filesink location="
                            + finalPath
                            + ".ts buffer-mode=unbuffered t. ! queue ! "
                              "decodebin ! videoconvert ! "
                              "videoscale ! video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myworkervideosink "
-                             "caps=\"video/x-raw,format=RGB,width=1280,height=720\" sync=true "
+                             "caps=\"video/x-raw,format=RGB,width=1280,height=720\" sync=false "
                              "demux. ! queue name=audioqueue ! decodebin !"
                              "audioconvert ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved ! appsink "
-                             "caps=\"audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved\" name=myaudiosink sync=true";
+                             "caps=\"audio/x-raw,format=S16LE,channels=1,rate=8000,layout=interleaved\" name=myaudiosink sync=false";
 
     // string = g_strdup_printf
     // good ("filesrc location=/workspace/gst-qt/samples/test.avi ! avidemux name=d ! queue ! xvimagesink d. ! audioconvert ! audioresample ! appsink caps=\"%s\" name=myaudiosink", filename, audio_caps);
@@ -185,14 +185,14 @@ void GstreamerThreadWorker::mainLoop()
     gst_object_unref(bus);
 
     myaudiosink = gst_bin_get_by_name(GST_BIN(_data->source), "myaudiosink");
-    g_object_set(G_OBJECT(myaudiosink), "emit-signals", TRUE, "sync", TRUE, NULL);
+    g_object_set(G_OBJECT(myaudiosink), "emit-signals", TRUE, "sync", FALSE, NULL);
     g_signal_connect(myaudiosink, "new-sample", G_CALLBACK(on_worker_new_audio_sample_from_sink), _data);
     gst_object_unref(myaudiosink);
 
     std::cout << "Worker audio sink ready..." << std::endl;
 
     myworkervideosink = gst_bin_get_by_name(GST_BIN(_data->source), "myworkervideosink");
-    g_object_set(G_OBJECT(myworkervideosink), "emit-signals", TRUE, "sync", TRUE, NULL);
+    g_object_set(G_OBJECT(myworkervideosink), "emit-signals", TRUE, "sync", FALSE, NULL);
     g_signal_connect(myworkervideosink, "new-sample", G_CALLBACK(on_worker_new_video_sample_from_sink), _data);
     gst_object_unref(myworkervideosink);
 

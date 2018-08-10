@@ -14,9 +14,10 @@ VideoWidget::~VideoWidget() {}
 
 void VideoWidget::drawFrame(QSharedPointer<std::vector<unsigned char>> frame)
 {
-    // qDebug() << "DRAW FRAME!";
+    qDebug() << "DRAW FRAME!";
     if (frameList.size() > 60) {
         frameList.pop_front();
+        qDebug() << "DROP FRAME!";
     }
     frameList.push_back(frame);
     update();
@@ -41,12 +42,15 @@ void VideoWidget::paintEvent(QPaintEvent* event)
 
         QImage image((const unsigned char*) frame->data(), 1280, 720, QImage::Format_RGB888);
         painter.drawImage(QRect(0, 0, width(), height()), image);
-        while (frameList.size() != 1) {
+        /*while (frameList.size() != 1) {
+            frameList.pop_front();
+        }*/
+        if (frameList.size() > 1) {
             frameList.pop_front();
         }
     }
-    if (frameList.size() > 1) {
+    /*if (frameList.size() > 1) {
         update();
-    }
-    // update();
+    }*/
+    update();
 }

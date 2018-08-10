@@ -40,6 +40,9 @@ static gboolean on_source_message_player(GstBus* bus, GstMessage* message, Playe
     case GST_MESSAGE_ASYNC_DONE:
         std::cout << "================ ASYNC DONE!" << std::endl;
         break;
+    case GST_MESSAGE_ANY:
+        std::cout << "Message:" << message->type << std::endl;
+        break;
     default:
         break;
     }
@@ -153,7 +156,7 @@ void GstreamerVideoPlayer::mainLoop()
     }
 
     QString launchString("filesrc name=inputfile location=" + currentFilePath + "/" + _currentPath + _currentFileName + QString::number(id)
-                         + ".ts ! tsdemux ! queue ! h264parse ! decodebin ! videoconvert ! videoscale ! videorate ! "
+                         + ".ts ! tsdemux ! queue flush-on-eos=true leaky=upstream ! h264parse ! decodebin ! videoconvert ! videoscale ! videorate ! "
                            "video/x-raw,format=RGB,width=1280,height=720 ! appsink name=myplayervideosink");
 
     /* QString launchString("filesrc location=/workspace/gst-qt/samples/bunny.mkv ! matroskademux ! queue ! h264parse ! avdec_h264 ! videoconvert ! videoscale ! videorate ! "
@@ -203,7 +206,7 @@ void GstreamerVideoPlayer::showFrameAt(GstClockTime time)
 {
     std::cout << "POS:" << time / 1000.0f / 1000.0f / 1000.0f << "s" << std::endl;
     sync();
-    gint64 len;
+    gint64 len = 0;
     gst_element_query_duration(_data->source, GST_FORMAT_TIME, &len);
     std::cout << "DURA:" << len << std::endl;
     if (len <= time) {
@@ -214,7 +217,6 @@ void GstreamerVideoPlayer::showFrameAt(GstClockTime time)
     gst_element_set_state(_data->source, GST_STATE_PLAYING);
     std::cout << "SEEK:" << time << std::endl;
 
-    GstEvent* event = gst_event_new_seek(1.0, GST_FORMAT_TIME, static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_SKIP), GST_SEEK_TYPE_SET, time, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
-
-    gst_element_send_event(_data->source, event);
+    GstEvent* event1 = gst_event_new_seek(1.0, GST_FORMAT_TIME, static_cast<GstSeekFlags>(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_TRICKMODE_NO_AUDIO | GST_SEEK_FLAG_TRICKMODE_KEY_UNITS), GST_SEEK_TYPE_SET, time, GST_SEEK_TYPE_NONE, 0);
+    gst_element_send_event(_data->source, event1);
 }

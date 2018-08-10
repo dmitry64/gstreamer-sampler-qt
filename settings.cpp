@@ -5,13 +5,13 @@
 QString restoreLeftCameraAddress()
 {
     QSettings settings;
-    return settings.value("leftCameraAddress", "rtsp://172.168.100.8/udpstream_ch1_stream1_h264").toString();
+    return settings.value("leftCameraAddress", "rtsp://172.168.100.8/udpstream_ch1_stream1").toString();
 }
 
 QString restoreRightCameraAddress()
 {
     QSettings settings;
-    return settings.value("rightCameraAddress", "rtsp://172.168.100.9/udpstream_ch1_stream1_h264").toString();
+    return settings.value("rightCameraAddress", "rtsp://172.168.100.9/udpstream_ch1_stream1").toString();
 }
 
 QString restoreDefaultVideoFolder()

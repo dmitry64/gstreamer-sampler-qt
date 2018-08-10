@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget* parent)
     playerRight.setCameraType(GstreamerVideoPlayer::CameraType::eCameraRight);
 
     ui->uiGroupBox->hide();
-    ui->registrationLabel->setText(tr("Waiting..."));
+    ui->registrationLabel->setText(tr("Ожидание..."));
     startAllWorkers();
     // ui->audioWidgetLeft->hide();
     //  ui->sampleViewerLeft->hide();
@@ -76,8 +76,9 @@ void MainWindow::switchMode(int mode)
         QObject::connect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
         QObject::connect(&workerRight, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameRight);
         ui->modeSwitchButton->setText("Mode: Realtime");
-        ui->modeLabel->setText(tr("Realtime"));
+        ui->modeLabel->setText(tr("Сканирование"));
         ui->coordSlider->setEnabled(false);
+        ui->timeSlider->setEnabled(false);
     } break;
     case 1: {
         QObject::disconnect(&workerLeft, &GstreamerThreadWorker::frameReady, this, &MainWindow::onFrameLeft);
@@ -87,8 +88,9 @@ void MainWindow::switchMode(int mode)
         QObject::connect(&playerLeft, &GstreamerVideoPlayer::frameReady, this, &MainWindow::onFrameLeft);
 
         ui->modeSwitchButton->setText("Mode: View");
-        ui->modeLabel->setText(tr("View"));
+        ui->modeLabel->setText(tr("Просмотр"));
         ui->coordSlider->setEnabled(true);
+        ui->timeSlider->setEnabled(true);
 
     } break;
     }
@@ -135,14 +137,14 @@ void MainWindow::setFrameAtCoord(unsigned int coord)
 
 void MainWindow::stopAllWorkers()
 {
-    sync();
+    // sync();
     if (workerLeft.isRunning()) {
         workerLeft.stopWorker();
         while (workerLeft.isRunning()) {
             qApp->processEvents();
         }
         qDebug() << "Left worker stopped";
-        QThread::msleep(100);
+        QThread::msleep(10);
     }
 
     if (workerRight.isRunning()) {
@@ -151,7 +153,7 @@ void MainWindow::stopAllWorkers()
             qApp->processEvents();
         }
         qDebug() << "Right worker stopped";
-        QThread::msleep(100);
+        QThread::msleep(10);
     }
 
     if (playerLeft.isRunning()) {
@@ -160,7 +162,7 @@ void MainWindow::stopAllWorkers()
             qApp->processEvents();
         }
         qDebug() << "Left player stopped";
-        QThread::msleep(100);
+        QThread::msleep(10);
     }
 
     if (playerRight.isRunning()) {
@@ -169,20 +171,20 @@ void MainWindow::stopAllWorkers()
             qApp->processEvents();
         }
         qDebug() << "Right player stopped";
-        QThread::msleep(100);
+        QThread::msleep(10);
     }
     QThread::msleep(1000);
-    sync();
+    // sync();
 }
 
 void MainWindow::startAllWorkers()
 {
     qDebug() << "Starting all workers...";
 
-    sync();
+    // sync();
     workerLeft.start();
     workerRight.start();
-    QThread::msleep(1000);
+    QThread::msleep(2000);
     sync();
     playerLeft.start();
     playerRight.start();
@@ -231,7 +233,7 @@ void MainWindow::updateSliderRange()
 
 void MainWindow::setFrameBySlider(int sliderPos)
 {
-    sync();
+    // sync();
     std::pair<unsigned int, unsigned int> minmax = getMinMaxCoords();
     unsigned int minCoord = minmax.first;
     unsigned int maxCoord = minmax.second;
@@ -245,7 +247,7 @@ void MainWindow::setFrameBySlider(int sliderPos)
 
 void MainWindow::setFrameByTimeSlider(int timeSliderPos)
 {
-    sync();
+    // sync();
     GstClockTime maxTime = playerLeft.getTotalDuration();
     GstClockTime minTime = 0;
 
@@ -333,17 +335,17 @@ void MainWindow::onNewCoord(unsigned int coord, GstClockTime time, int cameraInd
     if (_coordBuffers.at(cameraIndex).size() % 100 == 0) {
         updateSliderRange();
     }
-    sync();
+    // sync();
 }
 
 void MainWindow::onClientConnected()
 {
-    ui->connectionLabel->setText(tr("Connected"));
+    ui->connectionLabel->setText(tr("Подключено"));
 }
 
 void MainWindow::onClientDisconnected()
 {
-    ui->connectionLabel->setText(tr("Disconnected"));
+    ui->connectionLabel->setText(tr("Отключено"));
 }
 
 void MainWindow::on_audioPauseButton_released()
@@ -356,12 +358,9 @@ void MainWindow::on_audioPauseButton_released()
 
 void MainWindow::on_seekButton_released()
 {
-    static int counter = 0;
-    counter++;
-    qDebug() << "SEEK:" << _coordBuffers.at(0).at(3 * counter).time();
-    playerLeft.showFrameAt(_coordBuffers.at(0).at(3 * counter).time());
-    playerRight.showFrameAt(_coordBuffers.at(1).at(3 * counter).time());
-    onNumberDecodedLeft(_coordBuffers.at(0).at(3 * counter).coord());
+    int value = rand() % 1000;
+    ui->timeSlider->setValue(value);
+    setFrameByTimeSlider(value);
 }
 
 void MainWindow::on_modeSwitchButton_released()
@@ -393,7 +392,7 @@ void MainWindow::on_coordSlider_sliderMoved(int position)
 
 void MainWindow::onRegistrationStart(QString name)
 {
-    sync();
+    // sync();
     QThread::msleep(1000);
     _currentRegistrationName = name;
     stopAllWorkers();
@@ -409,9 +408,9 @@ void MainWindow::onRegistrationStart(QString name)
     _coordBuffers.at(0).clear();
     _coordBuffers.at(1).clear();
 
-    QThread::msleep(100);
+    QThread::msleep(1000);
     startAllWorkers();
-    ui->registrationLabel->setText(tr("Recording..."));
+    ui->registrationLabel->setText(tr("Запись"));
     ui->registrationNameLabel->setText(name);
 }
 
@@ -420,7 +419,7 @@ void MainWindow::onRegistrationStop()
     stopAllWorkers();
     _coordBuffers.at(0).clear();
     _coordBuffers.at(1).clear();
-    ui->registrationLabel->setText(tr("Stopped"));
+    ui->registrationLabel->setText(tr("Остановлено"));
     ui->registrationNameLabel->setText("");
 }
 
@@ -446,6 +445,7 @@ void MainWindow::onSetCoord(unsigned int coord)
         setFrameAtCoord(coord);
     }
     _lastViewCoord = coord;
+    updateSliderRange();
 }
 
 void MainWindow::on_startRegistrationButton_released()

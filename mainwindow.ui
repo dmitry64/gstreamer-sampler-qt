@@ -31,7 +31,7 @@
      <number>1</number>
     </property>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_5" stretch="6,0,0">
+     <layout class="QVBoxLayout" name="verticalLayout_5" stretch="6,0,0,0">
       <property name="spacing">
        <number>1</number>
       </property>
@@ -96,7 +96,7 @@
            </size>
           </property>
           <property name="text">
-           <string>Hide options</string>
+           <string>Показать опции</string>
           </property>
          </widget>
         </item>
@@ -122,7 +122,7 @@
             <item>
              <widget class="QLabel" name="label_5">
               <property name="text">
-               <string>Connection:</string>
+               <string>Соединение:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -132,14 +132,14 @@
             <item>
              <widget class="QLabel" name="connectionLabel">
               <property name="text">
-               <string>Waiting...</string>
+               <string>Ожидание...</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QLabel" name="label_4">
               <property name="text">
-               <string>Mode:</string>
+               <string>Режим:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -156,7 +156,7 @@
             <item>
              <widget class="QLabel" name="label_3">
               <property name="text">
-               <string>Registration:</string>
+               <string>Регистрация:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -173,7 +173,7 @@
             <item>
              <widget class="QLabel" name="label_6">
               <property name="text">
-               <string>Filename:</string>
+               <string>Имя файла:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -197,7 +197,7 @@
             <item>
              <widget class="QLabel" name="label_7">
               <property name="text">
-               <string>[L] First coord:</string>
+               <string>[L] Первая координата:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -214,7 +214,7 @@
             <item>
              <widget class="QLabel" name="label_8">
               <property name="text">
-               <string>[L] Last coord:</string>
+               <string>[L] Последняя координата:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -231,7 +231,7 @@
             <item>
              <widget class="QLabel" name="label_12">
               <property name="text">
-               <string>[L] Count:</string>
+               <string>[L] Количество:</string>
               </property>
              </widget>
             </item>
@@ -245,7 +245,7 @@
             <item>
              <widget class="QLabel" name="label_9">
               <property name="text">
-               <string>[R] First coord:</string>
+               <string>[R] Первая координата:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -262,7 +262,7 @@
             <item>
              <widget class="QLabel" name="label_11">
               <property name="text">
-               <string>[R] Last coord:</string>
+               <string>[R] Последняя координата:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -279,7 +279,7 @@
             <item>
              <widget class="QLabel" name="label_10">
               <property name="text">
-               <string>[R] Count:</string>
+               <string>[R] Количество:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -298,6 +298,105 @@
          </layout>
         </item>
        </layout>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox_4">
+        <property name="title">
+         <string>Прокрутка</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_9">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_11">
+           <item>
+            <widget class="QLabel" name="label_13">
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Координата:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="coordSlider">
+             <property name="focusPolicy">
+              <enum>Qt::NoFocus</enum>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="invertedAppearance">
+              <bool>false</bool>
+             </property>
+             <property name="invertedControls">
+              <bool>false</bool>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksAbove</enum>
+             </property>
+             <property name="tickInterval">
+              <number>10</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_12">
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Время: </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="timeSlider">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksBelow</enum>
+             </property>
+             <property name="tickInterval">
+              <number>10</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
       </item>
       <item>
        <widget class="QGroupBox" name="uiGroupBox">
@@ -320,47 +419,6 @@
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <item>
-          <widget class="QSlider" name="coordSlider">
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
-           </property>
-           <property name="maximum">
-            <number>1000</number>
-           </property>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="invertedAppearance">
-            <bool>false</bool>
-           </property>
-           <property name="invertedControls">
-            <bool>false</bool>
-           </property>
-           <property name="tickPosition">
-            <enum>QSlider::TicksAbove</enum>
-           </property>
-           <property name="tickInterval">
-            <number>10</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSlider" name="timeSlider">
-           <property name="maximum">
-            <number>1000</number>
-           </property>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="tickPosition">
-            <enum>QSlider::TicksBelow</enum>
-           </property>
-           <property name="tickInterval">
-            <number>10</number>
-           </property>
-          </widget>
-         </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
            <property name="spacing">

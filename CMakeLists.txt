@@ -18,7 +18,7 @@ pkg_check_modules(GST REQUIRED gstreamer-1.0>=1.4
                                gstreamer-app-1.0>=1.4)
 
 
-add_executable(${PROJECT_NAME} "main.cpp" "mainwindow.cpp" "mainwindow.h" "mainwindow.ui" "gstreamerthreadworker.h" "gstreamerthreadworker.cpp" "audiovisualizer.h" "audiovisualizer.cpp" "videowidget.cpp" "videowidget.h" "waveanalyzer.hpp" "waveanalyzer.cxx" "audiosampleviewer.cxx" "audiosampleviewer.hpp" "waveanalyzerthread.hpp" "waveanalyzerthread.cxx" "gstreamervideoplayer.cxx" "gstreamervideoplayer.hpp" "controlserver.cxx" "controlserver.hpp" "videocontrolprotocol.hpp" "settings.cpp" "settings.h")
+add_executable(${PROJECT_NAME} "main.cpp" "mainwindow.cpp" "mainwindow.h" "mainwindow.ui" "gstreamerthreadworker.h" "gstreamerthreadworker.cpp" "audiovisualizer.h" "audiovisualizer.cpp" "videowidget.cpp" "videowidget.h" "waveanalyzer.hpp" "waveanalyzer.cxx" "audiosampleviewer.cxx" "audiosampleviewer.hpp" "waveanalyzerthread.hpp" "waveanalyzerthread.cxx" "gstreamervideoplayer.cxx" "gstreamervideoplayer.hpp" "controlserver.cxx" "controlserver.hpp" "videocontrolprotocol.hpp" "settings.cpp" "settings.h" resources.qrc)
 target_include_directories(${PROJECT_NAME} PUBLIC ${GST_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Widgets Qt5::Network ${GST_LIBRARIES} pthread)
  
