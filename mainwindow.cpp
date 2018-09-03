@@ -180,11 +180,13 @@ void MainWindow::stopAllWorkers()
 void MainWindow::startAllWorkers()
 {
     qDebug() << "Starting all workers...";
-
-    // sync();
+    QThread::msleep(500);
+    sync();
     workerLeft.start();
     workerRight.start();
-    QThread::msleep(2000);
+    QThread::msleep(500);
+    sync();
+    QThread::msleep(5000);
     sync();
     playerLeft.start();
     playerRight.start();
