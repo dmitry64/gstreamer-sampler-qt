@@ -10,7 +10,7 @@ ControlServer::ControlServer(QObject* parent)
 
     connect(mTcpServer, &QTcpServer::newConnection, this, &ControlServer::slotNewConnection);
 
-    if (!mTcpServer->listen(QHostAddress::Any, 6000)) {
+    if (!mTcpServer->listen(QHostAddress::Any, 49005)) {
         qDebug() << "server is not started";
     }
     else {
@@ -107,9 +107,6 @@ void ControlServer::onMessageShowCoord(unsigned int coord)
 void ControlServer::slotNewConnection()
 {
     mTcpSocket = mTcpServer->nextPendingConnection();
-
-    // mTcpSocket->write("INIT");
-
     connect(mTcpSocket, &QTcpSocket::readyRead, this, &ControlServer::slotServerRead);
     connect(mTcpSocket, &QTcpSocket::disconnected, this, &ControlServer::slotClientDisconnected);
     emit clientConnected();
@@ -121,8 +118,6 @@ void ControlServer::slotServerRead()
         const QByteArray& array = mTcpSocket->readAll();
         _currentArray.append(array);
         parseMessage();
-
-        // mTcpSocket->write("OK");
     }
 }
 
