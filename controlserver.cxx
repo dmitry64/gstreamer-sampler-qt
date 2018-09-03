@@ -35,7 +35,6 @@ void ControlServer::parseMessage()
                     stringArray[i] = _currentArray.at(i + VIDEO_PROTOCOL::HEADER_SIZE);
                 }
 
-
                 onMessageStartReg(QString(stringArray));
             } break;
             case VIDEO_PROTOCOL::MESSAGE_TYPE_STOP_REG:
@@ -109,7 +108,7 @@ void ControlServer::slotNewConnection()
 {
     mTcpSocket = mTcpServer->nextPendingConnection();
 
-    mTcpSocket->write("INIT");
+    // mTcpSocket->write("INIT");
 
     connect(mTcpSocket, &QTcpSocket::readyRead, this, &ControlServer::slotServerRead);
     connect(mTcpSocket, &QTcpSocket::disconnected, this, &ControlServer::slotClientDisconnected);
@@ -119,11 +118,11 @@ void ControlServer::slotNewConnection()
 void ControlServer::slotServerRead()
 {
     while (mTcpSocket->bytesAvailable() > 0) {
-        QByteArray array = mTcpSocket->readAll();
+        const QByteArray& array = mTcpSocket->readAll();
         _currentArray.append(array);
         parseMessage();
 
-        mTcpSocket->write("OK");
+        // mTcpSocket->write("OK");
     }
 }
 
