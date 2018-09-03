@@ -9,7 +9,7 @@ const static unsigned char MESSAGE_TYPE_STOP_REG = 0xf2;
 const static unsigned char MESSAGE_TYPE_VIEW_MODE = 0xf3;
 const static unsigned char MESSAGE_TYPE_REALTIME_MODE = 0xf4;
 const static unsigned char MESSAGE_TYPE_SHOW_COORD = 0xf5;
-const static unsigned char MESSAGE_SIZE_SHOW_COORD = 0x04;
+const static unsigned char MESSAGE_SIZE_SHOW_COORD = 0x06;
 }  // namespace VIDEO_PROTOCOL
 
 

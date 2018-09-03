@@ -37,19 +37,19 @@ void ControlServer::parseMessage()
 
                 onMessageStartReg(QString(stringArray));
             } break;
-            case VIDEO_PROTOCOL::MESSAGE_TYPE_STOP_REG:
+            case VIDEO_PROTOCOL::MESSAGE_TYPE_STOP_REG: {
                 std::cout << "=================================== STOP REG! " << std::endl;
                 onMessageStopReg();
-                break;
-            case VIDEO_PROTOCOL::MESSAGE_TYPE_VIEW_MODE:
+            } break;
+            case VIDEO_PROTOCOL::MESSAGE_TYPE_VIEW_MODE: {
                 std::cout << "=================================== VIEW MODE! " << std::endl;
                 onMessageViewMode();
-                break;
-            case VIDEO_PROTOCOL::MESSAGE_TYPE_REALTIME_MODE:
+            } break;
+            case VIDEO_PROTOCOL::MESSAGE_TYPE_REALTIME_MODE: {
                 std::cout << "=================================== REALTIME MODE! " << std::endl;
                 onMessageRealtimeMode();
-                break;
-            case VIDEO_PROTOCOL::MESSAGE_TYPE_SHOW_COORD:
+            } break;
+            case VIDEO_PROTOCOL::MESSAGE_TYPE_SHOW_COORD: {
                 unsigned int coord = 0;
                 unsigned int b1 = _currentArray.at(2) & 0x000000ff;
                 unsigned int b2 = _currentArray.at(3) & 0x000000ff;
@@ -66,7 +66,7 @@ void ControlServer::parseMessage()
 
                 std::cout << "=================================== SHOW: " << coord << std::endl;
                 onMessageShowCoord(coord);
-                break;
+            } break;
             }
             _currentArray.remove(0, messageSize + VIDEO_PROTOCOL::HEADER_SIZE);
         }
