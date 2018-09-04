@@ -60,23 +60,16 @@ private slots:
     void on_audioPauseButton_released();
     void on_seekButton_released();
     void on_modeSwitchButton_released();
-
     void on_coordSlider_sliderMoved(int position);
     void onRegistrationStart(QString name);
     void onRegistrationStop();
     void onViewMode();
     void onRealtimeMode();
     void onSetCoord(unsigned int coord);
-
-
     void on_startRegistrationButton_released();
-
     void on_stopRegistrationButton_released();
-
     void on_hideUiButton_released();
-
     void on_coordSlider_sliderReleased();
-
     void on_timeSlider_sliderMoved(int position);
 
 public slots:
@@ -91,6 +84,10 @@ public slots:
     void onClientConnected();
     void onClientDisconnected();
 
+signals:
+    void startServer();
+    void stopServer();
+
 private:
     Ui::MainWindow* ui;
     GstreamerThreadWorker workerLeft;
@@ -98,8 +95,9 @@ private:
     GstreamerVideoPlayer playerLeft;
     GstreamerVideoPlayer playerRight;
     std::array<CoordVector, 2> _coordBuffers;
-    ControlServer _server;
+    ControlServer* _server;
     QString _currentRegistrationName;
+    QThread* _controlServerThread;
 };
 
 #endif  // MAINWINDOW_H

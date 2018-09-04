@@ -5,17 +5,15 @@
 
 ControlServer::ControlServer(QObject* parent)
     : QObject(parent)
+    , mTcpServer(nullptr)
+    , mTcpSocket(nullptr)
 {
-    mTcpServer = new QTcpServer(this);
+    qDebug() << "Control server created!";
+}
 
-    connect(mTcpServer, &QTcpServer::newConnection, this, &ControlServer::slotNewConnection);
-
-    if (!mTcpServer->listen(QHostAddress::Any, 49005)) {
-        qDebug() << "server is not started";
-    }
-    else {
-        qDebug() << "server is started";
-    }
+ControlServer::~ControlServer()
+{
+    qDebug() << "Control server deleted!";
 }
 
 void ControlServer::parseMessage()
@@ -29,13 +27,18 @@ void ControlServer::parseMessage()
             switch (messageId) {
             case VIDEO_PROTOCOL::MESSAGE_TYPE_START_REG: {
                 std::cout << "=================================== START REG: " << static_cast<unsigned int>(messageSize) << std::endl;
-                QByteArray stringArray(messageSize, 0x00);
+                if (messageSize != 0) {
+                    QByteArray stringArray(messageSize, 0x00);
 
-                for (int i = 0; i < messageSize; ++i) {
-                    stringArray[i] = _currentArray.at(i + VIDEO_PROTOCOL::HEADER_SIZE);
+                    for (int i = 0; i < messageSize; ++i) {
+                        stringArray[i] = _currentArray.at(i + VIDEO_PROTOCOL::HEADER_SIZE);
+                    }
+
+                    onMessageStartReg(QString(stringArray));
                 }
-
-                onMessageStartReg(QString(stringArray));
+                else {
+                    onMessageStartReg("no_name");
+                }
             } break;
             case VIDEO_PROTOCOL::MESSAGE_TYPE_STOP_REG: {
                 std::cout << "=================================== STOP REG! " << std::endl;
@@ -116,6 +119,7 @@ void ControlServer::slotServerRead()
 {
     while (mTcpSocket->bytesAvailable() > 0) {
         const QByteArray& array = mTcpSocket->readAll();
+        qDebug() << "RECV:" << array.toHex();
         _currentArray.append(array);
         parseMessage();
     }
@@ -125,4 +129,26 @@ void ControlServer::slotClientDisconnected()
 {
     mTcpSocket->close();
     emit clientDisconnected();
+}
+
+void ControlServer::onStartServer()
+{
+    qDebug() << "Starting control server...";
+    mTcpServer = new QTcpServer(this);
+
+    connect(mTcpServer, &QTcpServer::newConnection, this, &ControlServer::slotNewConnection);
+
+    if (!mTcpServer->listen(QHostAddress::Any, 49005)) {
+        qDebug() << "server is not started";
+    }
+    else {
+        qDebug() << "server is started";
+    }
+}
+
+void ControlServer::onStopServer()
+{
+    mTcpServer->close();
+    delete mTcpServer;
+    mTcpServer = nullptr;
 }

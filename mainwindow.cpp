@@ -26,13 +26,24 @@ MainWindow::MainWindow(QWidget* parent)
     QObject::connect(&workerRight, &GstreamerThreadWorker::sampleCutReady, this, &MainWindow::onSampleCutRight);
     QObject::connect(&workerRight, &GstreamerThreadWorker::coordReady, this, &MainWindow::onNewCoord);
 
-    QObject::connect(&_server, &ControlServer::doStartRegistration, this, &MainWindow::onRegistrationStart);
-    QObject::connect(&_server, &ControlServer::doStopRegistration, this, &MainWindow::onRegistrationStop);
-    QObject::connect(&_server, &ControlServer::doViewMode, this, &MainWindow::onViewMode);
-    QObject::connect(&_server, &ControlServer::doRealtimeMode, this, &MainWindow::onRealtimeMode);
-    QObject::connect(&_server, &ControlServer::doSetCoord, this, &MainWindow::onSetCoord);
-    QObject::connect(&_server, &ControlServer::clientConnected, this, &MainWindow::onClientConnected);
-    QObject::connect(&_server, &ControlServer::clientDisconnected, this, &MainWindow::onClientDisconnected);
+    _controlServerThread = new QThread(this);
+    _controlServerThread->setObjectName("_controlServerThread");
+    _server = new ControlServer();
+    _server->setObjectName("_server");
+    _server->moveToThread(_controlServerThread);
+
+    QObject::connect(_server, &ControlServer::doStartRegistration, this, &MainWindow::onRegistrationStart);
+    QObject::connect(_server, &ControlServer::doStopRegistration, this, &MainWindow::onRegistrationStop);
+    QObject::connect(_server, &ControlServer::doViewMode, this, &MainWindow::onViewMode);
+    QObject::connect(_server, &ControlServer::doRealtimeMode, this, &MainWindow::onRealtimeMode);
+    QObject::connect(_server, &ControlServer::doSetCoord, this, &MainWindow::onSetCoord);
+    QObject::connect(_server, &ControlServer::clientConnected, this, &MainWindow::onClientConnected);
+    QObject::connect(_server, &ControlServer::clientDisconnected, this, &MainWindow::onClientDisconnected);
+    QObject::connect(this, &MainWindow::startServer, _server, &ControlServer::onStartServer, Qt::BlockingQueuedConnection);
+    QObject::connect(this, &MainWindow::stopServer, _server, &ControlServer::onStopServer, Qt::BlockingQueuedConnection);
+
+    _controlServerThread->start();
+    emit startServer();
 
     workerLeft.setCameraType(GstreamerThreadWorker::CameraType::eCameraLeft);
     workerRight.setCameraType(GstreamerThreadWorker::CameraType::eCameraRight);
@@ -43,8 +54,6 @@ MainWindow::MainWindow(QWidget* parent)
     ui->uiGroupBox->hide();
     ui->registrationLabel->setText(tr("Ожидание..."));
     startAllWorkers();
-    // ui->audioWidgetLeft->hide();
-    //  ui->sampleViewerLeft->hide();
 
     switchMode(1);
     _mode = 1;
@@ -61,7 +70,8 @@ MainWindow::~MainWindow()
 void MainWindow::closeEvent(QCloseEvent* event)
 {
     qDebug() << "Close event!";
-
+    emit stopServer();
+    _controlServerThread->exit(0);
     stopAllWorkers();
     event->accept();
 }
@@ -137,7 +147,7 @@ void MainWindow::setFrameAtCoord(unsigned int coord)
 
 void MainWindow::stopAllWorkers()
 {
-    // sync();
+    sync();
     if (workerLeft.isRunning()) {
         workerLeft.stopWorker();
         while (workerLeft.isRunning()) {
@@ -174,7 +184,7 @@ void MainWindow::stopAllWorkers()
         QThread::msleep(10);
     }
     QThread::msleep(1000);
-    // sync();
+    sync();
 }
 
 void MainWindow::startAllWorkers()
@@ -186,7 +196,7 @@ void MainWindow::startAllWorkers()
     workerRight.start();
     QThread::msleep(500);
     sync();
-    QThread::msleep(5000);
+    QThread::msleep(4000);
     sync();
     playerLeft.start();
     playerRight.start();

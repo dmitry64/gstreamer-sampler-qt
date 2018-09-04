@@ -10,10 +10,11 @@ class ControlServer : public QObject
     Q_OBJECT
 public:
     explicit ControlServer(QObject* parent = nullptr);
+    ~ControlServer();
 
 private:
     void parseMessage();
-    void onMessageStartReg(const QString &name);
+    void onMessageStartReg(const QString& name);
     void onMessageStopReg();
     void onMessageViewMode();
     void onMessageRealtimeMode();
@@ -22,6 +23,8 @@ public slots:
     void slotNewConnection();
     void slotServerRead();
     void slotClientDisconnected();
+    void onStartServer();
+    void onStopServer();
 signals:
     void clientConnected();
     void clientDisconnected();
